@@ -1,125 +1,114 @@
 # Jetson 最终验收与交付清单
 
-## 项目范围
-- 部署形态：单点位 / 单摄像头 / 单 Jetson
-- Jetson 服务：`jetson_edge_disnet_cpp`
-- 平台环境：Windows HA 平台 + MQTT HA + MySQL HA
-- 当前设备标识：`MF001 / CAM001`
+## 一、交付目标
 
-## 当前版本状态
-- [x] 配置文件驱动运行
-- [x] RTSP 拉流与 8 帧滑窗推理
-- [x] TensorRT 推理链路打通
-- [x] 后处理稳定判定打通
-- [x] MQTT 上报 `device_status`
-- [x] MQTT 上报 `classification`
-- [x] `image_path` 截图保存并入库
-- [x] RTSP 断流自动重连
-- [x] MQTT 断连自动重连
-- [x] 日志落盘到 `runtime/logs`
-- [x] `systemd` 服务化运行
-- [x] 本机 Jetson 重建 TensorRT engine
+本周交付的不是“真实摄像头正式运行版”，而是：
 
-## 最终验收清单
+- 平台可用
+- 10 台设备台账可导入
+- Jetson 配置可按站点生成
+- 单站可独立安装
+- 无摄像头条件下可做 10 设备联调
 
-### 1. 环境验收
-- [x] Windows HA 平台可以正常启动
-- [x] MQTT HAProxy 入口 `192.168.31.185:1883` 可连通
-- [x] Jetson 本机 `mediamtx` 可以正常运行
-- [x] Windows `ffmpeg` 可以推流到 `rtsp://192.168.31.210:8554/mf001`
-- [x] Jetson 服务可读取 `configs/device.ini`
-- [x] Jetson 服务可读取本机生成的 `EdgeDisNet_fp16_jetson.engine`
+---
 
-### 2. 运行验收
-- [x] `rtsp_probe.service` 状态为 `active (running)`
-- [x] 服务启动后可自动打开 RTSP 流
-- [x] 推理过程中 FPS 基本稳定在实时范围
-- [x] 后处理可输出稳定类别结果
-- [x] 稳定事件触发后可保存截图
-- [x] 稳定事件触发后可发送 MQTT 分类消息
-- [x] `device_status` 周期性上报成功
-- [x] `classification` 周期性上报成功
+## 二、必须先走的顺序
 
-### 3. 平台入库验收
-- [x] `devices` 表存在 `MF001 / CAM001`
-- [x] `device_status` 表中 `MF001 / CAM001` 状态为 `on`
-- [x] `disaster_data` 表持续写入 `flood` 记录
-- [x] `disaster_data.image_path` 不再为 `NULL`
-- [x] 平台页面可看到设备在线
+1. 启动 HA 平台
+2. 跑环境与安全检查
+3. 从 inventory 导入设备
+4. 生成 Jetson 站点包
+5. 安装一个站点
+6. 启动 10 设备模拟联调
+7. 记录验收结果
 
-### 4. 异常恢复验收
-- [x] 停止 Windows 推流后，Jetson 程序不会退出
-- [x] 恢复推流后，Jetson 程序可自动恢复推理
-- [x] 停止 MQTT 入口后，Jetson 程序不会退出
-- [x] 恢复 MQTT 后，Jetson 程序可自动恢复上报
-- [x] `systemd` 可在程序退出后自动拉起服务
-- [ ] Jetson 重启后服务自动拉起验证
-- [ ] 无推流状态下开机启动，待推流恢复后自动恢复业务验证
+---
 
-### 5. 日志与文件验收
-- [x] `runtime/logs` 可生成运行日志文件
-- [x] `runtime/snapshots` 可生成事件截图文件
-- [x] 日志包含启动、MQTT、截图、分类事件
-- [ ] 日志保留周期与清理策略确认
-- [ ] 截图保留周期与清理策略确认
+## 三、必跑命令
 
-## 交付物清单
+### 1. 平台启动
 
-### 1. 代码与配置
-- [x] `jetson_edge_disnet_cpp/src`
-- [x] `jetson_edge_disnet_cpp/include`
-- [x] `jetson_edge_disnet_cpp/CMakeLists.txt`
-- [x] `jetson_edge_disnet_cpp/configs/device.ini`
-- [x] `jetson_edge_disnet_cpp/scripts/run_rtsp_probe.sh`
-- [x] `jetson_edge_disnet_cpp/deploy/rtsp_probe.service`
-
-### 2. 模型与引擎
-- [x] ONNX 模型：`/home/nvidia/mudflow_project/model_onnx/EdgeDisNet.onnx`
-- [x] Jetson 本机 engine：`/home/nvidia/mudflow_project/model_onnx/EdgeDisNet_fp16_jetson.engine`
-- [ ] 模型版本号记录
-- [ ] engine 生成命令归档
-
-### 3. 文档
-- [x] `启动说明文件.txt`
-- [x] `Jetson部署实施规划.md`
-- [x] `Jetson最终验收与交付清单.md`
-- [ ] 现场部署记录表
-- [ ] 点位编号与设备编号映射表
-
-## 现场部署检查清单
-- [ ] Jetson 主机名确认
-- [ ] Jetson 固定 IP 确认
-- [ ] 摄像头 RTSP 地址确认
-- [ ] `aibox_id / cam_id` 唯一性确认
-- [ ] MQTT 平台地址确认
-- [ ] `device.ini` 参数核对
-- [ ] `rtsp_probe.service` 已启用开机自启
-- [ ] 推理、截图、上报、入库全链路复测一次
-
-## 回滚清单
-- [ ] 保留 `device.ini.bak`
-- [ ] 保留旧版 engine 文件
-- [ ] 保留旧版服务文件
-- [ ] 明确回滚命令
-
-### 建议回滚命令
-```bash
-cp /home/nvidia/mudflow_project/jetson_edge_disnet_cpp/configs/device.ini.bak /home/nvidia/mudflow_project/jetson_edge_disnet_cpp/configs/device.ini
-sudo systemctl restart rtsp_probe.service
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\start_p2_3_mysql_ha.ps1 -Env dev
 ```
 
-## 交付结论
-- 当前版本结论：**可试部署、可长期运行、已完成平台 HA 闭环联调**
-- 正式批量部署前建议补齐：
-  - [ ] Jetson 重启自启验证
-  - [ ] 日志/截图清理策略
-  - [ ] 现场部署记录表
-  - [ ] 模型版本与 engine 生成命令归档
+### 2. 周计划验证
 
-## 签字区
-- 验收日期：
-- 点位编号：
-- Jetson 编号：
-- 摄像头编号：
-- 验收人：
-- 备注：
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_week1_platform_security.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_week1_inventory_bootstrap.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_week1_jetson_bundle.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_week1_site_bundle_packaging.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_week1_fleet_rehearsal.ps1
+```
+
+### 3. 平台设备导入
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\bootstrap_devices_from_inventory.ps1 -InventoryFile .\deploy\inventory\devices.csv -BaseUrl https://127.0.0.1 -ApiKey <API_KEY> -SkipExisting -AllowInsecureTls
+```
+
+### 4. Jetson 出包
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\render_jetson_site_bundle.ps1 -InventoryFile .\deploy\inventory\devices.csv -TemplateFile .\jetson_edge_disnet_cpp\configs\templates\device.ini.template -OutputRoot .\artifacts\jetson-sites -EvidenceUploadApiKey <EVIDENCE_UPLOAD_API_KEY>
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\package_jetson_bundles.ps1 -OutputRoot .\artifacts\jetson-sites
+```
+
+### 5. 模拟联调
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_simulator_fleet.ps1 -InventoryFile .\deploy\inventory\devices.csv -Host 127.0.0.1 -Port 1883 -Interval 5
+```
+
+### 6. 平台与可视化验收
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_p2_3_mysql_ha.ps1 -EnvFile .env.dev.ha.mqtt.dbha
+powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_p2_5_visualization.ps1
+```
+
+---
+
+## 四、交付物清单
+
+- `deploy/inventory/devices.csv`
+- `scripts/bootstrap_devices_from_inventory.ps1`
+- `scripts/render_jetson_site_bundle.ps1`
+- `scripts/package_jetson_bundles.ps1`
+- `scripts/run_simulator_fleet.ps1`
+- `jetson_edge_disnet_cpp/configs/templates/device.ini.template`
+- `jetson_edge_disnet_cpp/deploy/install_site.sh`
+- `jetson_edge_disnet_cpp/deploy/rtsp_probe@.service`
+- `docs/landing/week1-go-live-runbook.md`
+
+---
+
+## 五、通过标准
+
+- 10 台设备可从 inventory 一次性导入
+- 10 个站点包可渲染并压缩
+- `SITE01` 到 `SITE10` 的 `device.ini` 均正确带出 `video_source`
+- `rtsp_probe@SITE_CODE.service` 可按站点启用
+- 模拟器联调后，平台能持续收到 `device_status`、`classification`、`speed`
+- 平台 HA 和可视化验证通过
+
+---
+
+## 六、交付前留档
+
+- 平台启动截图
+- `docker ps` 结果截图
+- 10 台设备导入结果截图
+- `artifacts/jetson-sites` 目录截图
+- `SITE01.zip` 解压后的配置截图
+- `/api/device_overview`、`/api/dashboard/summary` 返回截图
+- `systemctl status rtsp_probe@SITE01.service` 截图
+
+---
+
+## 七、风险说明
+
+- 当前尚未接入真实摄像头，`video_source` 仍以本地视频或模拟 RTSP 为主
+- 当前周内版本重点是“可交付、可批量部署、可演练”，不是完整 OTA 发布系统
+- `artifacts/` 为本地生成目录，建议作为交付留档输出，不作为源码提交内容

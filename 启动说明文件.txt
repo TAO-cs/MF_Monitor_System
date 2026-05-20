@@ -1,249 +1,107 @@
-MF Monitor System 启动说明
+MF Monitor System 一周落地执行顺序
 
 项目根目录：
 d:\python_project\MF_Monitor_System
 
 ==================================================
-一、平台启动方式
+1. 平台启动
 ==================================================
-
-推荐使用 HA 联调环境：
 
 Windows PowerShell：
 powershell -ExecutionPolicy Bypass -File .\scripts\start_p2_3_mysql_ha.ps1 -Env dev
 
-说明：
-这套会启动：
-1. backend_api_1
-2. backend_api_2
-3. backend_worker
-4. mysql
-5. mysql_replica
-6. mqtt_primary
-7. mqtt_secondary
-8. mqtt
-9. nginx
+启动后检查：
+- docker ps
+- http://127.0.0.1:18001/health
+- https://127.0.0.1/console
 
-停止平台：
+==================================================
+2. 环境与安全检查
+==================================================
+
+Windows PowerShell：
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\check_env.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_week1_platform_security.ps1
+
+要求：
+- 必须提供 `PLATFORM_ADMIN_USERNAME`
+- 必须提供 `PLATFORM_ADMIN_PASSWORD`
+- 必须提供 `API_KEY`
+
+==================================================
+3. 设备台账与批量导入
+==================================================
+
+台账文件：
+.\deploy\inventory\devices.csv
+
+先验证：
+powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_week1_inventory_bootstrap.ps1
+
+导入 10 台设备：
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\bootstrap_devices_from_inventory.ps1 -InventoryFile .\deploy\inventory\devices.csv -BaseUrl https://127.0.0.1 -ApiKey <API_KEY> -SkipExisting -AllowInsecureTls
+
+==================================================
+4. 生成 Jetson 站点包
+==================================================
+
+模板验证：
+powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_week1_jetson_bundle.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_week1_site_bundle_packaging.ps1
+
+渲染站点配置：
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\render_jetson_site_bundle.ps1 -InventoryFile .\deploy\inventory\devices.csv -TemplateFile .\jetson_edge_disnet_cpp\configs\templates\device.ini.template -OutputRoot .\artifacts\jetson-sites -EvidenceUploadApiKey <EVIDENCE_UPLOAD_API_KEY>
+
+打包：
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\package_jetson_bundles.ps1 -OutputRoot .\artifacts\jetson-sites
+
+输出：
+- artifacts\jetson-sites\SITE01.zip
+- ...
+- artifacts\jetson-sites\SITE10.zip
+
+==================================================
+5. Jetson 单站安装
+==================================================
+
+Jetson 上执行：
+export APP_SOURCE_ROOT=/home/nvidia/mudflow_project/jetson_edge_disnet_cpp
+sudo bash /path/to/SITE01/deploy/install_site.sh SITE01 /path/to/SITE01
+sudo systemctl enable rtsp_probe@SITE01.service
+sudo systemctl start rtsp_probe@SITE01.service
+sudo systemctl status rtsp_probe@SITE01.service --no-pager
+
+==================================================
+6. 无摄像头 10 设备联调
+==================================================
+
+验证脚本：
+powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_week1_fleet_rehearsal.ps1
+
+启动模拟集群：
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_simulator_fleet.ps1 -InventoryFile .\deploy\inventory\devices.csv -Host 127.0.0.1 -Port 1883 -Interval 5
+
+验收观察：
+- /api/device_overview 为 10 台
+- /api/dashboard/summary 显示 10 台设备
+- /api/classification 持续增长
+- /api/speed 持续增长
+
+==================================================
+7. 最终验收
+==================================================
+
+powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_week1_platform_security.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_week1_inventory_bootstrap.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_week1_jetson_bundle.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_week1_site_bundle_packaging.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_week1_fleet_rehearsal.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_p2_3_mysql_ha.ps1 -EnvFile .env.dev.ha.mqtt.dbha
+powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_p2_5_visualization.ps1
+
+==================================================
+8. 停止平台
+==================================================
 
 Windows PowerShell：
 powershell -ExecutionPolicy Bypass -File .\scripts\stop_p2_3_mysql_ha.ps1 -Env dev
-
-==================================================
-二、平台启动后检查
-==================================================
-
-查看容器：
-
-Windows PowerShell：
-docker ps
-
-健康检查：
-http://127.0.0.1:18001/health
-
-平台页面：
-http://127.0.0.1:18001/monitor/
-
-MQTT HAProxy 入口：
-127.0.0.1:1883
-
-MQTT WebSocket：
-127.0.0.1:9001
-
-MQTT HAProxy 状态页：
-http://127.0.0.1:8404/stats
-
-登录账号：
-从部署环境变量 PLATFORM_ADMIN_USERNAME 读取
-
-登录密码：
-从部署环境变量 PLATFORM_ADMIN_PASSWORD 读取，不在仓库明文保存
-
-==================================================
-三、Windows 本机 IP 查询
-==================================================
-
-Jetson 连接平台 MQTT 时，不要用 Jetson 自己的 127.0.0.1，
-要用 Windows 平台机器的局域网 IP。
-
-Windows PowerShell：
-ipconfig
-
-示例：
-Windows 平台 IP：192.168.31.185
-
-==================================================
-四、Jetson 端 RTSP 服务启动
-==================================================
-
-Jetson 上先启动 mediamtx：
-
-cd ~/mudflow_project
-./mediamtx
-
-正常时会看到：
-[RTSP] listener opened on :8554
-
-==================================================
-五、Windows 向 Jetson 推视频流
-==================================================
-
-说明：
-RTSP 是推到 Jetson，不是推到 Windows 平台。
-
-假设：
-Jetson IP：192.168.31.210
-视频文件：F:\graduation_dataset\DeFlow_Dataset\Data\cam2.mp4
-
-Windows PowerShell：
-ffmpeg -re -stream_loop -1 -i "F:\graduation_dataset\DeFlow_Dataset\Data\cam2.mp4" -an -c:v libx264 -preset veryfast -tune zerolatency -bf 0 -g 25 -keyint_min 25 -pix_fmt yuv420p -f rtsp -rtsp_transport tcp rtsp://192.168.31.210:8554/mf001
-
-Jetson 上 mediamtx 日志应看到：
-is publishing to path 'mf001'
-
-==================================================
-六、Jetson 端程序编译
-==================================================
-
-Jetson 工程目录：
-~/mudflow_project/jetson_edge_disnet_cpp
-
-编译命令：
-cd ~/mudflow_project/jetson_edge_disnet_cpp/build
-cmake ..
-make -j$(nproc)
-
-==================================================
-七、Jetson 端程序运行
-==================================================
-
-说明：
-1. RTSP 从 Jetson 本机拉，所以用 127.0.0.1:8554
-2. MQTT 发到 Windows 平台机器，所以用 Windows 局域网 IP
-
-假设：
-RTSP：rtsp://127.0.0.1:8554/mf001
-engine：/home/nvidia/mudflow_project/model_onnx/EdgeDisNet_fp16.engine
-aibox_id：MF001
-cam_id：CAM001
-Windows 平台 IP：192.168.31.185
-MQTT 端口：1883
-
-Jetson 运行命令：
-~/mudflow_project/jetson_edge_disnet_cpp/build/rtsp_probe "rtsp://127.0.0.1:8554/mf001" "/home/nvidia/mudflow_project/model_onnx/EdgeDisNet_fp16.engine" "MF001" "CAM001" "192.168.31.185" 1883
-
-==================================================
-八、Jetson 运行成功后的关键日志
-==================================================
-
-RTSP 打开成功：
-Opened stream: rtsp://127.0.0.1:8554/mf001
-
-TensorRT 初始化成功：
-[TRT] Engine loaded successfully: /home/nvidia/mudflow_project/model_onnx/EdgeDisNet_fp16.engine
-
-MQTT 连接成功：
-[mqtt] connected to 192.168.31.185:1883
-
-设备心跳已发送：
-[mqtt] device_status published
-
-分类事件已发送：
-[mqtt] classification published | class=flood | confidence=0.85
-
-==================================================
-九、平台 MQTT Topic
-==================================================
-
-设备状态上报：
-disaster_monitoring/{aibox_id}/device_status
-
-分类识别上报：
-disaster_monitoring/{aibox_id}/classification
-
-流速上报：
-disaster_monitoring/{aibox_id}/speed
-
-平台下发配置：
-disaster_monitoring/{aibox_id}/config/{config_name}
-
-==================================================
-十、设备状态 JSON 示例
-==================================================
-
-{
-  "aibox_id": "MF001",
-  "cam_id": "CAM001",
-  "online_status": "on",
-  "timestamp": "2026-05-04T12:00:00+08:00"
-}
-
-==================================================
-十一、分类识别 JSON 示例
-==================================================
-
-{
-  "disaster_id": "rt_20260504_120000",
-  "disaster_type": "flood",
-  "timestamp": "2026-05-04T12:00:00+08:00",
-  "confidence": 0.8527,
-  "aibox_id": "MF001",
-  "cam_id": "CAM001",
-  "image_path": null
-}
-
-==================================================
-十二、平台联调检查顺序
-==================================================
-
-1. 先启动 Windows 平台 HA 环境
-2. 确认 docker ps 里 mqtt / mysql / backend / nginx 都在运行
-3. 启动 Jetson 上的 mediamtx
-4. Windows 使用 ffmpeg 向 Jetson 推流
-5. Jetson 运行 rtsp_probe
-6. 确认 Jetson 日志里出现：
-   [mqtt] connected ...
-   [mqtt] device_status published
-   [mqtt] classification published ...
-7. 打开平台页面查看设备状态和分类结果
-
-==================================================
-十三、常见问题
-==================================================
-
-1. 如果 Jetson 报：
-Connection refused
-说明 Jetson 本机 mediamtx 没启动。
-
-2. 如果 Jetson 报：
-method DESCRIBE failed: 404 Not Found
-说明 mediamtx 已启动，但 mf001 没有推流进来，需要重新执行 Windows ffmpeg 推流命令。
-
-3. 如果 Jetson 报：
-[mqtt] connect failed: Connection refused
-说明 MQTT Broker 没启动，或者 Jetson 连错了地址。
-HA 环境下应优先确认 Windows 平台容器已启动，并让 Jetson 连 Windows 的局域网 IP:1883。
-
-4. 如果出现：
-Missing reference picture
-decode_slice_header error
-通常是视频流刚接入时还没等到完整关键帧，只要后续推理和 MQTT 正常，一般不是主问题。
-
-==================================================
-十四、当前联调使用的地址
-==================================================
-
-Windows 平台 IP：
-192.168.31.185
-
-Jetson IP：
-192.168.31.210
-
-RTSP 推流目标：
-rtsp://192.168.31.210:8554/mf001
-
-Jetson 拉流地址：
-rtsp://127.0.0.1:8554/mf001
-
-Jetson MQTT 上报地址：
-192.168.31.185:1883
