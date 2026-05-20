@@ -1,0 +1,17 @@
+[Unit]
+Description=Jetson RTSP Probe Service for %i
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=nvidia
+WorkingDirectory=/opt/mf-monitor/%i/jetson_edge_disnet_cpp
+ExecStart=/opt/mf-monitor/%i/jetson_edge_disnet_cpp/scripts/run_rtsp_probe.sh /opt/mf-monitor/%i/config/device.ini
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

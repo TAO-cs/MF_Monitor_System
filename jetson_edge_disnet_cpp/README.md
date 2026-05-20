@@ -146,6 +146,40 @@ Important keys:
 - startup script: `scripts/run_rtsp_probe.sh`
 - systemd service: `deploy/rtsp_probe.service`
 
+## Inventory Bundle Flow
+
+For week-1 batch landing, the repo now supports site bundle rendering from the shared inventory source:
+
+- inventory source: `../deploy/inventory/devices.csv`
+- config template: `configs/templates/device.ini.template`
+- rendered output: `../artifacts/jetson-sites/<SITE_CODE>/config/device.ini`
+- packaged output: `../artifacts/jetson-sites/<SITE_CODE>.zip`
+
+Render all site configs from Windows:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\render_jetson_site_bundle.ps1 -EvidenceUploadApiKey <EVIDENCE_UPLOAD_API_KEY>
+```
+
+Package all site bundles:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\package_jetson_bundles.ps1
+```
+
+Install one site bundle on Jetson after placing the rendered `config/device.ini` beside the repo checkout:
+
+```bash
+sudo bash jetson_edge_disnet_cpp/deploy/install_site.sh SITE01 /path/to/site-bundle-root
+```
+
+Enable and start the per-site service:
+
+```bash
+sudo systemctl enable rtsp_probe@SITE01.service
+sudo systemctl start rtsp_probe@SITE01.service
+```
+
 ## Document Entry
 
 Recommended reading order:
