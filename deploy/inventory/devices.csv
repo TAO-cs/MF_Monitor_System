@@ -1,0 +1,11 @@
+site_code,aibox_id,cam_id,device_name,location,latitude,longitude,video_source,mqtt_host,mqtt_port,evidence_upload_url,enabled
+SITE01,MF001,CAM001,Site-01 Monitor Node,Field-Site-01,31.100001,121.100001,/data/mock/site01.mp4,192.168.31.185,1883,http://192.168.31.185/api/evidence/upload,true
+SITE02,MF002,CAM002,Site-02 Monitor Node,Field-Site-02,31.100002,121.100002,/data/mock/site02.mp4,192.168.31.185,1883,http://192.168.31.185/api/evidence/upload,true
+SITE03,MF003,CAM003,Site-03 Monitor Node,Field-Site-03,31.100003,121.100003,/data/mock/site03.mp4,192.168.31.185,1883,http://192.168.31.185/api/evidence/upload,true
+SITE04,MF004,CAM004,Site-04 Monitor Node,Field-Site-04,31.100004,121.100004,/data/mock/site04.mp4,192.168.31.185,1883,http://192.168.31.185/api/evidence/upload,true
+SITE05,MF005,CAM005,Site-05 Monitor Node,Field-Site-05,31.100005,121.100005,/data/mock/site05.mp4,192.168.31.185,1883,http://192.168.31.185/api/evidence/upload,true
+SITE06,MF006,CAM006,Site-06 Monitor Node,Field-Site-06,31.100006,121.100006,/data/mock/site06.mp4,192.168.31.185,1883,http://192.168.31.185/api/evidence/upload,true
+SITE07,MF007,CAM007,Site-07 Monitor Node,Field-Site-07,31.100007,121.100007,/data/mock/site07.mp4,192.168.31.185,1883,http://192.168.31.185/api/evidence/upload,true
+SITE08,MF008,CAM008,Site-08 Monitor Node,Field-Site-08,31.100008,121.100008,/data/mock/site08.mp4,192.168.31.185,1883,http://192.168.31.185/api/evidence/upload,true
+SITE09,MF009,CAM009,Site-09 Monitor Node,Field-Site-09,31.100009,121.100009,/data/mock/site09.mp4,192.168.31.185,1883,http://192.168.31.185/api/evidence/upload,true
+SITE10,MF010,CAM010,Site-10 Monitor Node,Field-Site-10,31.100010,121.100010,/data/mock/site10.mp4,192.168.31.185,1883,http://192.168.31.185/api/evidence/upload,true
