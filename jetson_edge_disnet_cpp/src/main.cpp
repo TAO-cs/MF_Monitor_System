@@ -133,7 +133,10 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    std::string source = config.getString("rtsp_url", "rtsp://127.0.0.1:8554/mf001");
+    std::string source = config.getString("video_source", "");
+    if (source.empty()) {
+        source = config.getString("rtsp_url", "rtsp://127.0.0.1:8554/mf001");
+    }
     std::string engine_path = config.getString("engine_path", "/home/nvidia/mudflow_project/model_onnx/EdgeDisNet_fp16.engine");
     std::string aibox_id = config.getString("aibox_id", "MF001");
     std::string cam_id = config.getString("cam_id", "CAM001");
