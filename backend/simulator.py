@@ -1,35 +1,62 @@
 ﻿from __future__ import annotations
 
-import argparse
 import json
 import random
 import time
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 import paho.mqtt.client as mqtt
 
+BEIJING_TZ = timezone(timedelta(hours=8))
 
-def build_payload(device_code: str) -> dict:
+
+def _now_beijing() -> datetime:
+    return datetime.now(BEIJING_TZ)
+
+
+def _now_iso() -> str:
+    return _now_beijing().isoformat()
+
+
+def build_classification_payload(aibox_id: str, cam_id: str) -> dict:
     return {
-        "device_code": device_code,
-        "trace_id": f"sim-{int(time.time() * 1000)}",
-        "event_time": datetime.utcnow().isoformat() + "Z",
-        "is_online": True,
-        "battery_level": round(random.uniform(30, 100), 2),
-        "signal_strength": random.randint(40, 100),
-        "metrics": [
-            {"key": "rainfall", "value": round(random.uniform(0, 120), 2), "unit": "mm"},
-            {"key": "water_level", "value": round(random.uniform(0.1, 6.5), 2), "unit": "m"},
-            {"key": "soil_moisture", "value": round(random.uniform(10, 90), 2), "unit": "%"},
-        ],
+        "disaster_id": f"{_now_beijing().strftime('%Y%m%d_%H%M%S')}_{random.randint(100, 999)}",
+        "disaster_type": random.choice(["flood", "mudslide"]),
+        "timestamp": _now_iso(),
+        "confidence": round(random.uniform(0.75, 0.99), 4),
+        "aibox_id": aibox_id,
+        "cam_id": cam_id,
+        "image_path": f"https://storage.server/data/images/{aibox_id}/{cam_id}/{int(time.time())}.jpg",
+    }
+
+
+def build_speed_payload(aibox_id: str, cam_id: str) -> dict:
+    return {
+        "aibox_id": aibox_id,
+        "cam_id": cam_id,
+        "timestamp": _now_iso(),
+        "disaster_type": random.choice(["flood", "mudslide"]),
+        "speed": [round(random.uniform(0.5, 2.5), 2) for _ in range(4)],
+    }
+
+
+def build_status_payload(aibox_id: str, cam_id: str) -> dict:
+    return {
+        "aibox_id": aibox_id,
+        "cam_id": cam_id,
+        "online_status": "on",
+        "timestamp": _now_iso(),
     }
 
 
 def main():
+    import argparse
+
     parser = argparse.ArgumentParser()
     parser.add_argument("--host", default="127.0.0.1")
     parser.add_argument("--port", type=int, default=1883)
-    parser.add_argument("--device", default="DEV-001")
+    parser.add_argument("--device", default="MF001")
+    parser.add_argument("--cam", default="CAM001")
     parser.add_argument("--interval", type=int, default=3)
     args = parser.parse_args()
 
@@ -37,14 +64,27 @@ def main():
     client.connect(args.host, args.port, keepalive=60)
     client.loop_start()
 
-    topic = f"mf/{args.device}/telemetry"
-    print(f"publishing to {topic}")
+    cls_topic = f"disaster_monitoring/{args.device}/classification"
+    speed_topic = f"disaster_monitoring/{args.device}/speed"
+    status_topic = f"disaster_monitoring/{args.device}/device_status"
+
+    print(f"publishing to {cls_topic}, {speed_topic}, {status_topic}")
 
     try:
         while True:
-            payload = build_payload(args.device)
-            client.publish(topic, json.dumps(payload), qos=1)
-            print(payload)
+            status_payload = build_status_payload(args.device, args.cam)
+            client.publish(status_topic, json.dumps(status_payload, ensure_ascii=False), qos=1)
+            print({"topic": status_topic, "payload": status_payload})
+
+            cls_payload = build_classification_payload(args.device, args.cam)
+            speed_payload = build_speed_payload(args.device, args.cam)
+
+            client.publish(cls_topic, json.dumps(cls_payload, ensure_ascii=False), qos=0)
+            client.publish(speed_topic, json.dumps(speed_payload, ensure_ascii=False), qos=0)
+
+            print({"topic": cls_topic, "payload": cls_payload})
+            print({"topic": speed_topic, "payload": speed_payload})
+
             time.sleep(args.interval)
     except KeyboardInterrupt:
         pass

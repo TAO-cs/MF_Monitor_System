@@ -1,0 +1,17 @@
+# 健康检查
+curl.exe "http://43.140.218.217:8000/health"
+
+# 设备基础信息
+curl.exe -H "Authorization: Bearer MF_API_TEST_2026_001" "http://43.140.218.217:8000/api/devices?aibox_id=MF001"
+
+# 设备位置信息
+curl.exe -H "Authorization: Bearer MF_API_TEST_2026_001" "http://43.140.218.217:8000/api/device_location?aibox_id=MF001"
+
+# 设备在线状态
+curl.exe -H "Authorization: Bearer MF_API_TEST_2026_001" "http://43.140.218.217:8000/api/device_status?aibox_id=MF001"
+
+# 分类识别数据
+curl.exe -H "Authorization: Bearer MF_API_TEST_2026_001" "http://43.140.218.217:8000/api/classification?aibox_id=MF001&cam_id=CAM001&start_time=2026-05-01T00:00:00%2B08:00&end_time=2026-05-07T23:59:59%2B08:00"
+
+# 流速监测数据
+curl.exe -H "Authorization: Bearer MF_API_TEST_2026_001" "http://43.140.218.217:8000/api/speed?aibox_id=MF001&cam_id=CAM001&start_time=2026-05-01T00:00:00%2B08:00&end_time=2026-05-07T23:59:59%2B08:00"

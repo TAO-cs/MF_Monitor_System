@@ -1,0 +1,44 @@
+name: p2-6-ci
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - develop
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  validate-local-ci:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Create venv
+        shell: powershell
+        run: |
+          python -m venv venv_MFSystem
+          .\venv_MFSystem\Scripts\python.exe -m pip install --upgrade pip
+          .\venv_MFSystem\Scripts\python.exe -m pip install -r .\backend\requirements.txt
+
+      - name: Run CI checks
+        shell: powershell
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_ci_local.ps1 -SkipDockerBuild
+
+  docker-build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Docker build backend image
+        run: |
+          docker build --build-arg BASE_IMAGE=python:3.12-slim -t mf-monitor-ci:latest ./backend

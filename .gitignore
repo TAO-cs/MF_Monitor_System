@@ -1,4 +1,4 @@
-﻿# Python
+# Python
 .venv/
 __pycache__/
 *.pyc
@@ -13,3 +13,22 @@ __pycache__/
 # OS
 .DS_Store
 Thumbs.db
+# Nginx TLS certs
+nginx/certs/*.crt
+nginx/certs/*.key
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+backend/frontend_dist/*
+!backend/frontend_dist/.gitkeep
+backend/evidence_uploads/*
+!backend/evidence_uploads/.gitkeep
+
+# Jetson runtime/build artifacts
+jetson_edge_disnet_cpp/build/
+jetson_edge_disnet_cpp/runtime/logs/*
+!jetson_edge_disnet_cpp/runtime/logs/.gitkeep
+jetson_edge_disnet_cpp/runtime/snapshots/*
+!jetson_edge_disnet_cpp/runtime/snapshots/.gitkeep
+jetson_edge_disnet_cpp/configs/*.bak

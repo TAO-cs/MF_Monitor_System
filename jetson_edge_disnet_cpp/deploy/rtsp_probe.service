@@ -1,0 +1,17 @@
+[Unit]
+Description=Jetson RTSP Probe Service
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=nvidia
+WorkingDirectory=/home/nvidia/mudflow_project/jetson_edge_disnet_cpp
+ExecStart=/home/nvidia/mudflow_project/jetson_edge_disnet_cpp/scripts/run_rtsp_probe.sh
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

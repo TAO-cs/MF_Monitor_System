@@ -1,0 +1,4 @@
+logs/*
+snapshots/*
+!logs/.gitkeep
+!snapshots/.gitkeep

@@ -1,0 +1,160 @@
+# Jetson EdgeDisNet C++ Service
+
+## Overview
+This subproject is the deployable Jetson edge inference service for a single site:
+
+- one camera
+- one Jetson
+- one `aibox_id / cam_id`
+- RTSP input from local `mediamtx`
+- TensorRT inference from local engine
+- MQTT reporting to the HA platform
+
+The current implementation is service-ready and keeps the following engineering capabilities:
+
+- config-driven startup
+- RTSP auto reconnect
+- MQTT auto reconnect
+- event snapshot saving
+- `image_path` reporting
+- runtime log files
+- `systemd` service deployment
+- Jetson-local TensorRT engine support
+
+## Directory Layout
+
+```text
+jetson_edge_disnet_cpp/
+  configs/
+    device.ini
+  deploy/
+    rtsp_probe.service
+  docs/
+    README.md
+  include/
+    common/
+    infer/
+    mqtt/
+    preprocess/
+    stream/
+  runtime/
+    logs/
+    snapshots/
+  scripts/
+    run_rtsp_probe.sh
+  src/
+    common/
+    infer/
+    preprocess/
+    stream/
+    main.cpp
+  CMakeLists.txt
+```
+
+## Build
+
+This service is not a generic desktop C++ demo. It targets Jetson Linux and expects:
+
+- Ubuntu on NVIDIA Jetson, not native Windows
+- `cmake`, `make`, and a C++17 compiler
+- OpenCV development files
+- CUDA and TensorRT from JetPack
+- `libmosquitto-dev`
+- `libcurl4-openssl-dev`
+
+Typical dependency install on Jetson:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y \
+  build-essential \
+  cmake \
+  pkg-config \
+  libopencv-dev \
+  libmosquitto-dev \
+  libcurl4-openssl-dev
+```
+
+Notes:
+
+- TensorRT and CUDA are usually provided by JetPack and must match the device architecture.
+- The default `CMakeLists.txt` searches Linux aarch64 paths such as `/usr/lib/aarch64-linux-gnu`, so building on Windows directly will fail unless you switch to WSL/Linux and provide compatible dependencies.
+- You also need a valid TensorRT engine file and a reachable RTSP stream at runtime.
+
+```bash
+cd ~/mudflow_project/jetson_edge_disnet_cpp
+mkdir -p build
+cd build
+cmake ..
+make -j$(nproc)
+```
+
+If `cmake` itself is missing, install it first. If configuration fails, the updated `CMakeLists.txt` will now stop with a direct message for the missing dependency.
+
+## Run
+
+Manual run:
+
+```bash
+~/mudflow_project/jetson_edge_disnet_cpp/build/rtsp_probe /home/nvidia/mudflow_project/jetson_edge_disnet_cpp/configs/device.ini
+```
+
+Service run:
+
+```bash
+sudo systemctl start rtsp_probe.service
+systemctl status rtsp_probe.service
+journalctl -u rtsp_probe.service -n 50 --no-pager
+```
+
+## Runtime Outputs
+
+Generated outputs are intentionally kept outside source directories:
+
+- logs: `runtime/logs/`
+- snapshots: `runtime/snapshots/`
+
+These are runtime artifacts and should not be treated as source files.
+
+## Key Config
+
+Main config file:
+
+```text
+configs/device.ini
+```
+
+Important keys:
+
+- `aibox_id`
+- `cam_id`
+- `rtsp_url`
+- `engine_path`
+- `mqtt_host`
+- `mqtt_port`
+- `confidence_threshold`
+- `stable_window`
+- `cooldown_sec`
+- `status_interval_sec`
+- `snapshot_dir`
+- `log_dir`
+- `rtsp_reconnect_sec`
+- `mqtt_reconnect_sec`
+
+## Deployment Files
+
+- startup script: `scripts/run_rtsp_probe.sh`
+- systemd service: `deploy/rtsp_probe.service`
+
+## Document Entry
+
+Recommended reading order:
+
+1. project deployment steps: [启动说明文件.txt](../启动说明文件.txt)
+2. implementation roadmap: [Jetson部署实施规划.md](../Jetson部署实施规划.md)
+3. final acceptance checklist: [Jetson最终验收与交付清单.md](../Jetson最终验收与交付清单.md)
+
+## Scope Note
+
+This folder is the Jetson-side deployable service only.
+It does not replace or restructure the backend / frontend / HA platform source tree in the repository root.

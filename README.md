@@ -1,18 +1,18 @@
-﻿# MF Monitor System - 雏形脚本
+# MF Monitor System - 闆忓舰鑴氭湰
 
-这个雏形实现了你当前阶段最关键的两条主线：
-- MySQL 持久化存储
-- MQTT 实时消息接入与消费入库
+杩欎釜闆忓舰瀹炵幇浜嗕綘褰撳墠闃舵鏈€鍏抽敭鐨勪袱鏉′富绾匡細
+- MySQL 鎸佷箙鍖栧瓨鍌?
+- MQTT 瀹炴椂娑堟伅鎺ュ叆涓庢秷璐瑰叆搴?
 
-## 1. 你需要安装的软件
+## 1. 浣犻渶瑕佸畨瑁呯殑杞欢
 
-1. Docker Desktop (建议 4.x 以上)
-2. Python 3.11+ (建议 3.11/3.12)
-3. Git (可选)
-4. MySQL 客户端工具 (可选，推荐 DBeaver 或 Navicat)
-5. MQTT 客户端工具 (可选，推荐 MQTTX)
+1. Docker Desktop (寤鸿 4.x 浠ヤ笂)
+2. Python 3.11+ (寤鸿 3.11/3.12)
+3. Git (鍙€?
+4. MySQL 瀹㈡埛绔伐鍏?(鍙€夛紝鎺ㄨ崘 DBeaver 鎴?Navicat)
+5. MQTT 瀹㈡埛绔伐鍏?(鍙€夛紝鎺ㄨ崘 MQTTX)
 
-## 2. 目录结构
+## 2. 鐩綍缁撴瀯
 
 ```text
 MF_Monitor_System/
@@ -39,62 +39,62 @@ MF_Monitor_System/
   .env.example
 ```
 
-## 3. 快速启动
+## 3. 蹇€熷惎鍔?
 
-### 3.1 启动 MySQL + MQTT
+### 3.1 鍚姩 MySQL + MQTT
 
-在项目根目录执行：
+鍦ㄩ」鐩牴鐩綍鎵ц锛?
 
 ```powershell
 Copy-Item .env.example .env
 .\scripts\start.ps1
 ```
 
-### 3.2 启动后端服务
+### 3.2 鍚姩鍚庣鏈嶅姟
 
 ```powershell
 .\scripts\run_backend.ps1
 ```
 
-### 3.3 启动模拟设备上报
+### 3.3 鍚姩妯℃嫙璁惧涓婃姤
 
-新开一个终端：
+鏂板紑涓€涓粓绔細
 
 ```powershell
 .\scripts\run_simulator.ps1 -Device DEV-001 -Interval 3
 ```
 
-## 4. 可直接用的接口
+## 4. 鍙洿鎺ョ敤鐨勬帴鍙?
 
-1. 健康检查
+1. 鍋ュ悍妫€鏌?
 ```http
 GET http://127.0.0.1:8000/health
 ```
 
-2. 创建设备
+2. 鍒涘缓璁惧
 ```http
 POST http://127.0.0.1:8000/devices
 Content-Type: application/json
 
 {
   "device_code": "DEV-002",
-  "name": "演示设备2",
+  "name": "婕旂ず璁惧2",
   "device_type": "rainfall_sensor",
-  "location": "测试点B"
+  "location": "娴嬭瘯鐐笲"
 }
 ```
 
-3. 设备列表
+3. 璁惧鍒楄〃
 ```http
 GET http://127.0.0.1:8000/devices
 ```
 
-4. 最近遥测数据
+4. 鏈€杩戦仴娴嬫暟鎹?
 ```http
 GET http://127.0.0.1:8000/telemetry/latest?limit=20
 ```
 
-5. 下发命令（MQTT）
+5. 涓嬪彂鍛戒护锛圡QTT锛?
 ```http
 POST http://127.0.0.1:8000/commands/send
 Content-Type: application/json
@@ -108,21 +108,48 @@ Content-Type: application/json
 }
 ```
 
-## 5. MQTT Topic 规范（当前雏形）
+## 5. MQTT Topic 瑙勮寖锛堝綋鍓嶉洀褰級
 
-- 上报遥测: `mf/{device_id}/telemetry`
-- 设备状态: `mf/{device_id}/status`
-- 下发命令请求: `mf/{device_id}/command/req`
-- 命令应答: `mf/{device_id}/command/resp`
+- 涓婃姤閬ユ祴: `mf/{device_id}/telemetry`
+- 璁惧鐘舵€? `mf/{device_id}/status`
+- 涓嬪彂鍛戒护璇锋眰: `mf/{device_id}/command/req`
+- 鍛戒护搴旂瓟: `mf/{device_id}/command/resp`
 
-## 6. 停止环境
+## 6. 鍋滄鐜
 
 ```powershell
 .\scripts\stop.ps1
 ```
 
-## 7. 说明
+## 7. 璇存槑
 
-- `sql/init.sql` 会在 MySQL 首次启动时自动建库建表。
-- 后端在启动时会自动连接 MQTT 并订阅 `mf/+/telemetry` 和 `mf/+/status`。
-- 收到消息后会将 metrics 拆分落库到 `telemetry_data`，并更新 `device_status`。
+- `sql/init.sql` 浼氬湪 MySQL 棣栨鍚姩鏃惰嚜鍔ㄥ缓搴撳缓琛ㄣ€?
+- 鍚庣鍦ㄥ惎鍔ㄦ椂浼氳嚜鍔ㄨ繛鎺?MQTT 骞惰闃?`mf/+/telemetry` 鍜?`mf/+/status`銆?
+- 鏀跺埌娑堟伅鍚庝細灏?metrics 鎷嗗垎钀藉簱鍒?`telemetry_data`锛屽苟鏇存柊 `device_status`銆?
+
+## 8. Vue 鍓嶇鎺у埗鍙?
+褰撳墠椤圭洰宸茬粡鏂板 Vue 骞冲彴鍓嶇锛岀敓浜у叆鍙ｄ负锛?
+```text
+https://127.0.0.1/console
+```
+
+鏈湴寮€鍙戝懡浠わ細
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\run_frontend.ps1
+```
+
+鐢熶骇鏋勫缓鍛戒护锛?
+```powershell
+powershell -ExecutionPolicy Bypass -File .\scripts\build_frontend.ps1
+```
+
+璇存槑锛?- `frontend/` 鏄柊鐨?Vue 宸ョ▼鐩綍銆?- `scripts/build_frontend.ps1` 浼氬厛鏋勫缓 `frontend/dist`锛屽啀鍚屾鍒?`backend/frontend_dist/`銆?- 鍚庣閫氳繃 `/console` 鎻愪緵鍓嶇闈欐€佹枃浠讹紝鏃х増 `/dashboard` 淇濈暀鐢ㄤ簬骞虫粦杩佺Щ銆
+Vue 前端当前已经按模块拆分为：
+- `router/` 路由层
+- `layouts/` 平台布局层
+- `composables/` 共享数据层
+- `shared/components/` 共享组件层
+- `modules/*` 业务模块层
+
+这样后续可以按模块单独优化，不需要再在一个大页面里堆所有逻辑。

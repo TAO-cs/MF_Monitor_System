@@ -1,0 +1,83 @@
+﻿services:
+  backend_api_1:
+    build:
+      context: ./backend
+      args:
+        BASE_IMAGE: ${BACKEND_BASE_IMAGE:-python:3.12-slim}
+    container_name: mf_backend_api_1
+    restart: unless-stopped
+    env_file:
+      - ${HA_ENV_FILE:-.env.dev.ha}
+    environment:
+      APP_ENV: ${APP_ENV:-dev}
+      ENV_FILE: /app/.env.runtime
+      APP_INSTANCE_ID: backend-api-1
+      APP_RELEASE_CHANNEL: stable
+      APP_RELEASE_VERSION: ${RELEASE_VERSION_STABLE:-dev-stable}
+      ENABLE_INGESTION: "0"
+    volumes:
+      - ${HA_ENV_FILE:-.env.dev.ha}:/app/.env.runtime:ro
+      - ./backend/evidence_uploads:/app/evidence_uploads
+    depends_on:
+      - mysql
+      - mqtt
+    ports:
+      - "18001:8000"
+
+  backend_api_2:
+    build:
+      context: ./backend
+      args:
+        BASE_IMAGE: ${BACKEND_BASE_IMAGE:-python:3.12-slim}
+    container_name: mf_backend_api_2
+    restart: unless-stopped
+    env_file:
+      - ${HA_ENV_FILE:-.env.dev.ha}
+    environment:
+      APP_ENV: ${APP_ENV:-dev}
+      ENV_FILE: /app/.env.runtime
+      APP_INSTANCE_ID: backend-api-2
+      APP_RELEASE_CHANNEL: canary
+      APP_RELEASE_VERSION: ${RELEASE_VERSION_CANARY:-dev-canary}
+      ENABLE_INGESTION: "0"
+    volumes:
+      - ${HA_ENV_FILE:-.env.dev.ha}:/app/.env.runtime:ro
+      - ./backend/evidence_uploads:/app/evidence_uploads
+    depends_on:
+      - mysql
+      - mqtt
+    ports:
+      - "18002:8000"
+
+  backend_worker:
+    build:
+      context: ./backend
+      args:
+        BASE_IMAGE: ${BACKEND_BASE_IMAGE:-python:3.12-slim}
+    container_name: mf_backend_worker
+    restart: unless-stopped
+    env_file:
+      - ${HA_ENV_FILE:-.env.dev.ha}
+    environment:
+      APP_ENV: ${APP_ENV:-dev}
+      ENV_FILE: /app/.env.runtime
+      APP_INSTANCE_ID: backend-worker
+      APP_RELEASE_CHANNEL: worker
+      APP_RELEASE_VERSION: ${RELEASE_VERSION_WORKER:-dev-worker}
+      ENABLE_INGESTION: "1"
+    volumes:
+      - ${HA_ENV_FILE:-.env.dev.ha}:/app/.env.runtime:ro
+      - ./backend/evidence_uploads:/app/evidence_uploads
+    depends_on:
+      - mysql
+      - mqtt
+    ports:
+      - "18003:8000"
+
+  nginx:
+    depends_on:
+      - backend_api_1
+      - backend_api_2
+    volumes:
+      - ./nginx/ha/default_ha.conf:/etc/nginx/conf.d/default.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro

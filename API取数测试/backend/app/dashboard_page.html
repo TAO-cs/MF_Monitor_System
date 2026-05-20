@@ -1,0 +1,894 @@
+﻿<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>灾害监测可视化平台</title>
+  <style>
+    :root {
+      --bg: #f3ede3;
+      --panel: rgba(255, 250, 244, 0.88);
+      --panel-strong: rgba(255, 247, 239, 0.96);
+      --line: rgba(77, 54, 40, 0.14);
+      --ink: #1f1713;
+      --muted: #6f6257;
+      --accent: #c55a2b;
+      --accent-deep: #8e3411;
+      --teal: #1c6b6f;
+      --gold: #b88a2d;
+      --danger: #b12a1b;
+      --ok: #2f7b54;
+      --shadow: 0 20px 50px rgba(59, 35, 18, 0.12);
+      --radius: 24px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(197, 90, 43, 0.14), transparent 28%),
+        radial-gradient(circle at top right, rgba(28, 107, 111, 0.14), transparent 25%),
+        linear-gradient(180deg, #f8f3eb 0%, #efe4d6 100%);
+      font-family: "Trebuchet MS", "Aptos", "Segoe UI", sans-serif;
+      min-height: 100vh;
+    }
+
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(87, 63, 45, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(87, 63, 45, 0.035) 1px, transparent 1px);
+      background-size: 26px 26px;
+      mask-image: radial-gradient(circle at center, black 55%, transparent 100%);
+      opacity: 0.65;
+    }
+
+    .shell {
+      width: min(1500px, calc(100vw - 32px));
+      margin: 24px auto 40px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .hero {
+      display: grid;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .hero-card, .panel {
+      background: var(--panel);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+    }
+
+    .hero-card {
+      padding: 26px 28px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero-card::after {
+      content: "";
+      position: absolute;
+      right: -40px;
+      top: -40px;
+      width: 220px;
+      height: 220px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(197, 90, 43, 0.16), transparent 70%);
+    }
+
+    h1, h2, h3 {
+      font-family: Georgia, "Times New Roman", serif;
+      margin: 0;
+      letter-spacing: 0.02em;
+    }
+
+    h1 {
+      font-size: clamp(32px, 4vw, 52px);
+      line-height: 1.05;
+      margin-bottom: 12px;
+    }
+
+    .hero-copy {
+      color: var(--muted);
+      max-width: 760px;
+      line-height: 1.65;
+      font-size: 15px;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 18px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .chip {
+      padding: 9px 12px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.66);
+      border: 1px solid rgba(77, 54, 40, 0.1);
+    }
+
+    .control-card {
+      padding: 22px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .control-grid {
+      display: grid;
+      gap: 12px;
+    }
+
+    .field label {
+      display: block;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    input, select, button {
+      font: inherit;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 12px 14px;
+      border-radius: 14px;
+      border: 1px solid rgba(77, 54, 40, 0.14);
+      background: rgba(255,255,255,0.82);
+      color: var(--ink);
+      outline: none;
+    }
+
+    button {
+      border: none;
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform 140ms ease, box-shadow 140ms ease, opacity 140ms ease;
+    }
+
+    button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 10px 20px rgba(41, 28, 20, 0.12);
+    }
+
+    .primary { background: linear-gradient(135deg, var(--accent), var(--accent-deep)); color: #fff; }
+    .secondary { background: rgba(255,255,255,0.8); color: var(--ink); border: 1px solid rgba(77, 54, 40, 0.12); }
+    .ghost { background: rgba(28, 107, 111, 0.12); color: var(--teal); }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .status-line {
+      font-size: 13px;
+      color: var(--muted);
+      min-height: 20px;
+    }
+
+    .status-line.error { color: var(--danger); }
+    .status-line.ok { color: var(--ok); }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 14px;
+      margin-bottom: 18px;
+    }
+
+    .stat-card {
+      padding: 18px 18px 16px;
+      min-height: 132px;
+      position: relative;
+      overflow: hidden;
+      animation: rise 420ms ease both;
+    }
+
+    .stat-card::before {
+      content: "";
+      position: absolute;
+      left: -16px;
+      bottom: -24px;
+      width: 110px;
+      height: 110px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(197, 90, 43, 0.14), transparent 72%);
+    }
+
+    .stat-label {
+      color: var(--muted);
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    .stat-value {
+      font-size: clamp(28px, 3vw, 40px);
+      font-weight: 800;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .stat-foot {
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .grid-main {
+      display: grid;
+      grid-template-columns: 1.25fr 1fr;
+      gap: 18px;
+      margin-bottom: 18px;
+    }
+
+    .panel {
+      padding: 20px;
+    }
+
+    .panel-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .panel-sub {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 6px;
+    }
+
+    .map-stage {
+      position: relative;
+      border-radius: 24px;
+      min-height: 420px;
+      background:
+        linear-gradient(180deg, rgba(28, 107, 111, 0.1), rgba(197, 90, 43, 0.06)),
+        linear-gradient(135deg, rgba(255,255,255,0.75), rgba(243, 233, 220, 0.9));
+      border: 1px solid rgba(77, 54, 40, 0.1);
+      overflow: hidden;
+    }
+
+    .map-stage svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+      min-height: 420px;
+    }
+
+    .map-legend {
+      position: absolute;
+      left: 16px;
+      bottom: 16px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      background: rgba(255,255,255,0.78);
+      border: 1px solid rgba(77, 54, 40, 0.12);
+      border-radius: 14px;
+      padding: 10px 12px;
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .dot {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 6px;
+      vertical-align: middle;
+    }
+
+    .trend-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    canvas {
+      width: 100%;
+      height: 220px;
+      border-radius: 20px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.75), rgba(248, 241, 233, 0.88));
+      border: 1px solid rgba(77, 54, 40, 0.1);
+    }
+
+    .lower-grid {
+      display: grid;
+      grid-template-columns: 1.1fr 0.9fr;
+      gap: 18px;
+    }
+
+    .table-shell {
+      overflow: auto;
+      border-radius: 18px;
+      border: 1px solid rgba(77, 54, 40, 0.1);
+      background: rgba(255,255,255,0.7);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 680px;
+    }
+
+    th, td {
+      padding: 12px 14px;
+      text-align: left;
+      border-bottom: 1px solid rgba(77, 54, 40, 0.08);
+      font-size: 13px;
+    }
+
+    th {
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--muted);
+      background: rgba(255,255,255,0.76);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .badge.ok { background: rgba(47, 123, 84, 0.12); color: var(--ok); }
+    .badge.off { background: rgba(177, 42, 27, 0.12); color: var(--danger); }
+    .badge.mid { background: rgba(184, 138, 45, 0.14); color: var(--gold); }
+    .badge.open { background: rgba(177, 42, 27, 0.12); color: var(--danger); }
+    .badge.ack { background: rgba(184, 138, 45, 0.14); color: var(--gold); }
+    .badge.closed { background: rgba(47, 123, 84, 0.12); color: var(--ok); }
+
+    .rule-list, .device-list {
+      display: grid;
+      gap: 10px;
+    }
+
+    .rule-item, .device-item {
+      padding: 14px 16px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.72);
+      border: 1px solid rgba(77, 54, 40, 0.09);
+    }
+
+    .rule-item strong, .device-item strong {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 15px;
+    }
+
+    .row-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .empty {
+      padding: 24px;
+      border-radius: 18px;
+      border: 1px dashed rgba(77, 54, 40, 0.18);
+      color: var(--muted);
+      text-align: center;
+      background: rgba(255,255,255,0.54);
+    }
+
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(14px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 1200px) {
+      .hero, .grid-main, .lower-grid { grid-template-columns: 1fr; }
+      .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    @media (max-width: 700px) {
+      .shell { width: min(100vw - 18px, 100%); margin: 10px auto 28px; }
+      .hero-card, .panel, .control-card { padding: 16px; }
+      .cards { grid-template-columns: 1fr; }
+      h1 { font-size: 30px; }
+      .map-stage, .map-stage svg { min-height: 320px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <section class="hero">
+      <div class="hero-card">
+        <h1>灾害监测可视化平台</h1>
+        <div class="hero-copy">
+          面向山洪与泥石流业务的实时指挥视图。当前页面提供地理定位、实时态势、告警看板、趋势分析与报表导出，适合作为 P2-5 阶段的统一监控入口。
+        </div>
+        <div class="hero-meta">
+          <span class="chip">地图定位</span>
+          <span class="chip">实时态势</span>
+          <span class="chip">告警看板</span>
+          <span class="chip">趋势分析</span>
+          <span class="chip">CSV 导出</span>
+        </div>
+      </div>
+      <div class="hero-card control-card">
+        <div class="control-grid">
+          <div class="field">
+            <label for="apiKey">API Key</label>
+            <input id="apiKey" type="password" placeholder="输入 Bearer Key 用于读取可视化数据" />
+          </div>
+          <div class="field">
+            <label for="windowHours">统计时间窗口</label>
+            <select id="windowHours">
+              <option value="6">近 6 小时</option>
+              <option value="12">近 12 小时</option>
+              <option value="24" selected>近 24 小时</option>
+              <option value="72">近 72 小时</option>
+              <option value="168">近 7 天</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="bucketMinutes">趋势粒度</label>
+            <select id="bucketMinutes">
+              <option value="15">15 分钟</option>
+              <option value="30">30 分钟</option>
+              <option value="60" selected>60 分钟</option>
+              <option value="180">180 分钟</option>
+            </select>
+          </div>
+        </div>
+        <div class="toolbar">
+          <button class="primary" id="refreshBtn">刷新态势</button>
+          <button class="secondary" id="exportBtn">导出报表</button>
+          <button class="ghost" id="toggleAutoBtn">自动刷新：开</button>
+        </div>
+        <div class="status-line" id="statusLine">等待加载数据…</div>
+      </div>
+    </section>
+
+    <section class="cards" id="cards"></section>
+
+    <section class="grid-main">
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>地图定位</h2>
+            <div class="panel-sub">按设备地理坐标投影到态势图，颜色表示在线状态，光圈表示告警压力。</div>
+          </div>
+        </div>
+        <div class="map-stage" id="mapStage"></div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>历史趋势分析</h2>
+            <div class="panel-sub">观察分类事件、速度事件和告警触发在时间窗口内的变化。</div>
+          </div>
+        </div>
+        <div class="trend-grid">
+          <canvas id="classificationChart" width="620" height="220"></canvas>
+          <canvas id="speedChart" width="620" height="220"></canvas>
+          <canvas id="alarmChart" width="620" height="220"></canvas>
+        </div>
+      </div>
+    </section>
+
+    <section class="lower-grid">
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>告警看板</h2>
+            <div class="panel-sub">展示最近触发的告警，便于值守人员快速定位高风险设备。</div>
+          </div>
+        </div>
+        <div class="table-shell">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>规则</th>
+                <th>事件类型</th>
+                <th>级别</th>
+                <th>状态</th>
+                <th>设备</th>
+                <th>触发时间</th>
+              </tr>
+            </thead>
+            <tbody id="alarmRows"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="panel-head">
+          <div>
+            <h2>热点规则</h2>
+            <div class="panel-sub">展示当前最活跃的告警规则与设备动态。</div>
+          </div>
+        </div>
+        <div class="rule-list" id="ruleList"></div>
+        <div style="height:16px"></div>
+        <h3 style="margin-bottom: 10px;">实时态势设备列表</h3>
+        <div class="device-list" id="deviceList"></div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const storageKey = "mf_dashboard_api_key";
+    const autoKey = "mf_dashboard_auto_refresh";
+    const apiKeyInput = document.getElementById("apiKey");
+    const windowHoursSelect = document.getElementById("windowHours");
+    const bucketMinutesSelect = document.getElementById("bucketMinutes");
+    const cardsEl = document.getElementById("cards");
+    const statusLine = document.getElementById("statusLine");
+    const alarmRows = document.getElementById("alarmRows");
+    const ruleList = document.getElementById("ruleList");
+    const deviceList = document.getElementById("deviceList");
+    const mapStage = document.getElementById("mapStage");
+    const classificationChart = document.getElementById("classificationChart");
+    const speedChart = document.getElementById("speedChart");
+    const alarmChart = document.getElementById("alarmChart");
+    const refreshBtn = document.getElementById("refreshBtn");
+    const exportBtn = document.getElementById("exportBtn");
+    const toggleAutoBtn = document.getElementById("toggleAutoBtn");
+
+    let autoRefresh = localStorage.getItem(autoKey) !== "off";
+    let timer = null;
+
+    apiKeyInput.value = localStorage.getItem(storageKey) || "";
+    toggleAutoBtn.textContent = `自动刷新：${autoRefresh ? "开" : "关"}`;
+
+    function setStatus(text, type = "") {
+      statusLine.textContent = text;
+      statusLine.className = `status-line ${type}`.trim();
+    }
+
+    function badgeClass(type, value) {
+      if (type === "online") {
+        return value === "on" ? "ok" : value === "off" ? "off" : "mid";
+      }
+      if (type === "alarm") {
+        return value === "open" ? "open" : value === "ack" ? "ack" : "closed";
+      }
+      return "mid";
+    }
+
+    function fmt(value) {
+      if (!value) return "-";
+      const date = new Date(value);
+      if (Number.isNaN(date.getTime())) return String(value);
+      return date.toLocaleString("zh-CN", { hour12: false });
+    }
+
+    function getHeaders() {
+      const token = apiKeyInput.value.trim();
+      if (!token) {
+        throw new Error("请先输入 API Key");
+      }
+      localStorage.setItem(storageKey, token);
+      return { Authorization: `Bearer ${token}` };
+    }
+
+    async function fetchJson(url) {
+      const response = await fetch(url, { headers: getHeaders() });
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(`${response.status} ${text}`);
+      }
+      return response.json();
+    }
+
+    function renderCards(cards) {
+      const items = [
+        ["在册设备", cards.devices_total, `启用 ${cards.devices_enabled} / 禁用 ${cards.devices_disabled}`],
+        ["在线设备", cards.devices_online, `离线 ${cards.devices_offline} / 未知 ${cards.devices_unknown}`],
+        ["当前未闭环告警", cards.open_alarms, "需要优先处理的风险事件"],
+        ["分类事件窗口量", cards.classification_window, `时间窗口 ${windowHoursSelect.value} 小时`],
+        ["速度事件窗口量", cards.speed_window, `粒度 ${bucketMinutesSelect.value} 分钟`],
+      ];
+
+      cardsEl.innerHTML = items.map((item, index) => `
+        <article class="hero-card stat-card" style="animation-delay:${index * 80}ms">
+          <div class="stat-label">${item[0]}</div>
+          <div class="stat-value">${item[1]}</div>
+          <div class="stat-foot">${item[2]}</div>
+        </article>
+      `).join("");
+    }
+
+    function renderMap(points) {
+      if (!points || !points.length) {
+        mapStage.innerHTML = '<div class="empty">暂无带坐标的设备，可先通过设备管理中心补充设备位置。</div>';
+        return;
+      }
+
+      const valid = points.filter(item => typeof item.latitude === "number" && typeof item.longitude === "number");
+      if (!valid.length) {
+        mapStage.innerHTML = '<div class="empty">设备存在，但尚未配置有效经纬度。</div>';
+        return;
+      }
+
+      let minLat = Math.min(...valid.map(item => item.latitude));
+      let maxLat = Math.max(...valid.map(item => item.latitude));
+      let minLng = Math.min(...valid.map(item => item.longitude));
+      let maxLng = Math.max(...valid.map(item => item.longitude));
+      if (minLat === maxLat) { minLat -= 0.02; maxLat += 0.02; }
+      if (minLng === maxLng) { minLng -= 0.02; maxLng += 0.02; }
+
+      const width = 860;
+      const height = 420;
+      const padding = 48;
+
+      const grid = [];
+      for (let i = 0; i <= 5; i++) {
+        const x = padding + ((width - padding * 2) / 5) * i;
+        const y = padding + ((height - padding * 2) / 5) * i;
+        grid.push(`<line x1="${x}" y1="${padding}" x2="${x}" y2="${height - padding}" stroke="rgba(77,54,40,0.10)" stroke-dasharray="5 7"/>`);
+        grid.push(`<line x1="${padding}" y1="${y}" x2="${width - padding}" y2="${y}" stroke="rgba(77,54,40,0.10)" stroke-dasharray="5 7"/>`);
+      }
+
+      const markers = valid.map(item => {
+        const x = padding + ((item.longitude - minLng) / (maxLng - minLng)) * (width - padding * 2);
+        const y = height - padding - ((item.latitude - minLat) / (maxLat - minLat)) * (height - padding * 2);
+        const color = item.online_status === "on" ? "#2f7b54" : item.online_status === "off" ? "#b12a1b" : "#b88a2d";
+        const halo = 12 + Math.min(20, (item.open_alarm_count || 0) * 4);
+        const label = `${item.label} | ${item.location || "未命名站点"}`;
+        return `
+          <g>
+            <circle cx="${x}" cy="${y}" r="${halo}" fill="${color}" opacity="0.10"></circle>
+            <circle cx="${x}" cy="${y}" r="8" fill="${color}" stroke="#fff7f0" stroke-width="3"></circle>
+            <text x="${x + 12}" y="${y - 10}" font-size="12" fill="#2a1d17">${label}</text>
+            <text x="${x + 12}" y="${y + 8}" font-size="11" fill="#6f6257">在线:${item.online_status || "unknown"} / 告警:${item.open_alarm_count || 0}</text>
+          </g>
+        `;
+      }).join("");
+
+      mapStage.innerHTML = `
+        <svg viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <linearGradient id="terrainFill" x1="0" x2="1" y1="0" y2="1">
+              <stop offset="0%" stop-color="rgba(28,107,111,0.10)"/>
+              <stop offset="100%" stop-color="rgba(197,90,43,0.08)"/>
+            </linearGradient>
+          </defs>
+          <rect x="0" y="0" width="${width}" height="${height}" rx="26" fill="url(#terrainFill)"></rect>
+          <path d="M 0 300 C 120 240 230 350 340 290 C 470 220 580 330 730 250 C 790 220 840 230 860 240 L 860 420 L 0 420 Z" fill="rgba(197,90,43,0.10)"></path>
+          ${grid.join("")}
+          ${markers}
+        </svg>
+        <div class="map-legend">
+          <span><span class="dot" style="background:#2f7b54"></span>在线</span>
+          <span><span class="dot" style="background:#b12a1b"></span>离线</span>
+          <span><span class="dot" style="background:#b88a2d"></span>未知</span>
+          <span>外圈越大表示当前未闭环告警越多</span>
+        </div>
+      `;
+    }
+
+    function drawLineChart(canvas, label, color, data, field) {
+      const ctx = canvas.getContext("2d");
+      const width = canvas.width;
+      const height = canvas.height;
+      ctx.clearRect(0, 0, width, height);
+
+      ctx.fillStyle = "#2a1d17";
+      ctx.font = "600 14px Trebuchet MS";
+      ctx.fillText(label, 16, 24);
+
+      const points = (data || []).map(item => Number(item[field] || 0));
+      const max = Math.max(1, ...points);
+      const left = 44;
+      const top = 38;
+      const chartWidth = width - 64;
+      const chartHeight = height - 62;
+
+      ctx.strokeStyle = "rgba(77,54,40,0.12)";
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 4; i++) {
+        const y = top + (chartHeight / 4) * i;
+        ctx.beginPath();
+        ctx.moveTo(left, y);
+        ctx.lineTo(left + chartWidth, y);
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = "#6f6257";
+      ctx.font = "12px Trebuchet MS";
+      for (let i = 0; i <= 4; i++) {
+        const value = Math.round(max - (max / 4) * i);
+        const y = top + (chartHeight / 4) * i;
+        ctx.fillText(String(value), 10, y + 4);
+      }
+
+      if (!points.length) {
+        ctx.fillStyle = "#6f6257";
+        ctx.fillText("暂无数据", left, top + chartHeight / 2);
+        return;
+      }
+
+      const stepX = points.length > 1 ? chartWidth / (points.length - 1) : 0;
+      ctx.beginPath();
+      points.forEach((value, index) => {
+        const x = left + stepX * index;
+        const y = top + chartHeight - (value / max) * chartHeight;
+        if (index === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      });
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      ctx.lineTo(left + chartWidth, top + chartHeight);
+      ctx.lineTo(left, top + chartHeight);
+      ctx.closePath();
+      ctx.fillStyle = color + "22";
+      ctx.fill();
+
+      ctx.beginPath();
+      points.forEach((value, index) => {
+        const x = left + stepX * index;
+        const y = top + chartHeight - (value / max) * chartHeight;
+        ctx.moveTo(x + 4, y);
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+      });
+      ctx.fillStyle = color;
+      ctx.fill();
+    }
+
+    function renderAlarms(items) {
+      if (!items || !items.length) {
+        alarmRows.innerHTML = '<tr><td colspan="7"><div class="empty">暂无告警数据</div></td></tr>';
+        return;
+      }
+      alarmRows.innerHTML = items.map(item => `
+        <tr>
+          <td>${item.id}</td>
+          <td>${item.rule_code}</td>
+          <td>${item.event_type}</td>
+          <td>${item.severity}</td>
+          <td><span class="badge ${badgeClass("alarm", item.status)}">${item.status}</span></td>
+          <td>${item.aibox_id} / ${item.cam_id}</td>
+          <td>${fmt(item.triggered_at)}</td>
+        </tr>
+      `).join("");
+    }
+
+    function renderRules(items) {
+      if (!items || !items.length) {
+        ruleList.innerHTML = '<div class="empty">当前时间窗口内暂无热点规则</div>';
+        return;
+      }
+      ruleList.innerHTML = items.map(item => `
+        <div class="rule-item">
+          <strong>${item.rule_code}</strong>
+          <div class="row-meta">
+            <span>触发次数 ${item.count}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    function renderDevices(items) {
+      if (!items || !items.length) {
+        deviceList.innerHTML = '<div class="empty">暂无设备数据</div>';
+        return;
+      }
+      deviceList.innerHTML = items.slice(0, 8).map(item => `
+        <div class="device-item">
+          <strong>${item.device_name || (item.aibox_id + ' / ' + item.cam_id)}</strong>
+          <div class="row-meta">
+            <span>${item.aibox_id} / ${item.cam_id}</span>
+            <span>${item.location?.location || "未配置位置"}</span>
+          </div>
+          <div class="row-meta" style="margin-top:8px;">
+            <span class="badge ${badgeClass("online", item.status?.online_status)}">${item.status?.online_status || "unknown"}</span>
+            <span>未闭环告警 ${item.open_alarm_count || 0}</span>
+            <span>分类 ${item.classification_count_window || 0}</span>
+            <span>速度 ${item.speed_count_window || 0}</span>
+          </div>
+        </div>
+      `).join("");
+    }
+
+    async function refreshAll() {
+      try {
+        setStatus("正在拉取最新态势数据…");
+        const hours = Number(windowHoursSelect.value);
+        const bucket = Number(bucketMinutesSelect.value);
+        const [summary, trends] = await Promise.all([
+          fetchJson(`/api/dashboard/summary?hours=${hours}`),
+          fetchJson(`/api/dashboard/trends?hours=${hours}&bucket_minutes=${bucket}`),
+        ]);
+
+        renderCards(summary.cards || {});
+        renderMap(summary.map_points || []);
+        renderAlarms(summary.latest_alarms || []);
+        renderRules(summary.hotspot_rules || []);
+        renderDevices(summary.devices || []);
+        drawLineChart(classificationChart, "分类事件趋势", "#c55a2b", trends.buckets || [], "classification_count");
+        drawLineChart(speedChart, "速度事件趋势", "#1c6b6f", trends.buckets || [], "speed_count");
+        drawLineChart(alarmChart, "告警触发趋势", "#b12a1b", trends.buckets || [], "alarm_count");
+        setStatus(`已刷新，窗口 ${hours} 小时，最新时间 ${fmt(summary.generated_at)}`, "ok");
+      } catch (error) {
+        console.error(error);
+        setStatus(`加载失败：${error.message}`, "error");
+      }
+    }
+
+    async function exportReport() {
+      try {
+        setStatus("正在导出 CSV 报表…");
+        const hours = Number(windowHoursSelect.value);
+        const response = await fetch(`/api/dashboard/report.csv?hours=${hours}`, { headers: getHeaders() });
+        if (!response.ok) {
+          throw new Error(`${response.status} ${await response.text()}`);
+        }
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = `mf_dashboard_report_${hours}h.csv`;
+        link.click();
+        URL.revokeObjectURL(url);
+        setStatus("报表导出完成", "ok");
+      } catch (error) {
+        console.error(error);
+        setStatus(`导出失败：${error.message}`, "error");
+      }
+    }
+
+    function resetTimer() {
+      if (timer) window.clearInterval(timer);
+      if (autoRefresh) {
+        timer = window.setInterval(refreshAll, 15000);
+      }
+    }
+
+    refreshBtn.addEventListener("click", refreshAll);
+    exportBtn.addEventListener("click", exportReport);
+    apiKeyInput.addEventListener("change", refreshAll);
+    windowHoursSelect.addEventListener("change", refreshAll);
+    bucketMinutesSelect.addEventListener("change", refreshAll);
+    toggleAutoBtn.addEventListener("click", () => {
+      autoRefresh = !autoRefresh;
+      localStorage.setItem(autoKey, autoRefresh ? "on" : "off");
+      toggleAutoBtn.textContent = `自动刷新：${autoRefresh ? "开" : "关"}`;
+      resetTimer();
+      setStatus(autoRefresh ? "自动刷新已开启" : "自动刷新已关闭", "ok");
+    });
+
+    resetTimer();
+    refreshAll();
+  </script>
+</body>
+</html>

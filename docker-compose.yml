@@ -1,5 +1,3 @@
-﻿version: "3.9"
-
 services:
   mysql:
     image: mysql:8.0
@@ -11,7 +9,7 @@ services:
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     ports:
-      - "3306:3306"
+      - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
       - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -28,6 +26,17 @@ services:
       - ./mqtt/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
       - mqtt_data:/mosquitto/data
       - mqtt_log:/mosquitto/log
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: mf_nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
 
 volumes:
   mysql_data:

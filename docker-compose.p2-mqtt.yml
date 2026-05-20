@@ -1,0 +1,40 @@
+services:
+  mqtt:
+    image: haproxy:2.9-alpine
+    depends_on:
+      - mqtt_primary
+      - mqtt_secondary
+    volumes:
+      - ./mqtt/cluster/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg:ro
+    ports:
+      - "8404:8404"
+
+  mqtt_primary:
+    image: eclipse-mosquitto:2
+    container_name: mf_mqtt_1
+    restart: unless-stopped
+    volumes:
+      - ./mqtt/cluster/node1/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mqtt_primary_data:/mosquitto/data
+      - mqtt_primary_log:/mosquitto/log
+    ports:
+      - "1884:1883"
+      - "9002:9001"
+
+  mqtt_secondary:
+    image: eclipse-mosquitto:2
+    container_name: mf_mqtt_2
+    restart: unless-stopped
+    volumes:
+      - ./mqtt/cluster/node2/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - mqtt_secondary_data:/mosquitto/data
+      - mqtt_secondary_log:/mosquitto/log
+    ports:
+      - "1885:1883"
+      - "9003:9001"
+
+volumes:
+  mqtt_primary_data:
+  mqtt_primary_log:
+  mqtt_secondary_data:
+  mqtt_secondary_log:

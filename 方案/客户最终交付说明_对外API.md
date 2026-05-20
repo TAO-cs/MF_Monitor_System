@@ -1,0 +1,306 @@
+# 云端平台对外 API 交付说明
+
+本文档用于外单位通过云端平台接口获取山洪泥石流监测数据。本文档以当前联调环境的实际可用地址和实际返回数据为准。
+
+## 1. 接入信息
+
+- 联调地址：`http://43.140.218.217:8000`
+- 协议：`HTTP`
+- 请求方式：`GET`
+- 返回格式：`application/json`
+- 鉴权方式：请求头携带 `Authorization: Bearer <API_KEY>`
+- 当前测试 `API_KEY`：`MF_API_TEST_2026_001`
+
+请求头示例：
+
+```http
+Authorization: Bearer MF_API_TEST_2026_001
+```
+
+## 2. 通用调用规则
+
+- 所有业务接口均需携带 `Authorization` 请求头，否则会返回 `401`
+- 查询参数建议使用 UTF-8 编码
+- 时间参数使用 ISO 8601 格式
+- 当时间中包含 `+08:00` 时，URL 中必须写成 `%2B08:00`
+- 例如：
+  `2026-05-01T00:00:00%2B08:00`
+- 支持分页的接口可传：
+  `paginate=true&page=1&page_size=50`
+- 默认分页大小为 `50`
+- `page_size` 最大值为 `200`
+
+## 3. 健康检查
+
+- 接口：`GET /health`
+- 作用：检查服务是否在线
+
+Windows PowerShell：
+
+```powershell
+curl.exe "http://43.140.218.217:8000/health"
+```
+
+Linux / macOS：
+
+```bash
+curl "http://43.140.218.217:8000/health"
+```
+
+## 4. 接口清单
+
+### 4.1 设备基础信息
+
+- 接口：`GET /api/devices`
+- 作用：获取设备基础信息，以及关联的位置、在线状态、分组信息
+
+可选参数：
+
+- `aibox_id`：设备盒子编号，例如 `MF001`
+- `cam_id`：摄像头编号，例如 `CAM001`
+- `enabled`：是否启用，`true` 或 `false`
+- `group_code`：设备分组编码
+- `keyword`：关键字模糊查询
+- `paginate`、`page`、`page_size`
+
+Windows PowerShell：
+
+```powershell
+curl.exe -H "Authorization: Bearer MF_API_TEST_2026_001" "http://43.140.218.217:8000/api/devices?aibox_id=MF001"
+```
+
+Linux / macOS：
+
+```bash
+curl -H "Authorization: Bearer MF_API_TEST_2026_001" \
+"http://43.140.218.217:8000/api/devices?aibox_id=MF001"
+```
+
+当前联调返回示例：
+
+```json
+[
+  {
+    "id": 1,
+    "aibox_id": "MF001",
+    "cam_id": "CAM001",
+    "device_name": "1号监测点",
+    "device_type": "monitor_node",
+    "enabled": true,
+    "allow_config_push": true,
+    "allow_remote_control": false,
+    "metadata_json": {
+      "site_code": "MF001",
+      "site_name": "XX监测点",
+      "project_name": "山洪泥石流监测"
+    },
+    "location": {
+      "id": 1,
+      "aibox_id": "MF001",
+      "cam_id": "CAM001",
+      "location": "XX监测点",
+      "latitude": 34.05,
+      "longitude": 118.05
+    },
+    "status": {
+      "id": 1,
+      "aibox_id": "MF001",
+      "cam_id": "CAM001",
+      "online_status": "on",
+      "last_update": "2026-05-07T21:05:00"
+    },
+    "groups": [
+      {
+        "group_code": "DEFAULT",
+        "group_name": "默认分组"
+      }
+    ]
+  }
+]
+```
+
+### 4.2 分类识别数据
+
+- 接口：`GET /api/classification`
+- 作用：获取灾害识别结果数据
+
+可选参数：
+
+- `aibox_id`
+- `cam_id`
+- `start_time`
+- `end_time`
+- `paginate`、`page`、`page_size`
+
+Windows PowerShell：
+
+```powershell
+curl.exe -H "Authorization: Bearer MF_API_TEST_2026_001" "http://43.140.218.217:8000/api/classification?aibox_id=MF001&cam_id=CAM001&start_time=2026-05-01T00:00:00%2B08:00&end_time=2026-05-07T23:59:59%2B08:00"
+```
+
+Linux / macOS：
+
+```bash
+curl -H "Authorization: Bearer MF_API_TEST_2026_001" \
+"http://43.140.218.217:8000/api/classification?aibox_id=MF001&cam_id=CAM001&start_time=2026-05-01T00:00:00%2B08:00&end_time=2026-05-07T23:59:59%2B08:00"
+```
+
+返回字段说明：
+
+- `disaster_id`：灾害事件编号
+- `aibox_id`：设备盒子编号
+- `cam_id`：摄像头编号
+- `disaster_type`：灾害类型，当前为 `flood` 或 `mudslide`
+- `timestamp`：识别时间，北京时间
+- `confidence`：识别置信度
+- `image_path`：证据图片路径
+
+### 4.3 流速监测数据
+
+- 接口：`GET /api/speed`
+- 作用：获取流速分析结果数据
+
+可选参数：
+
+- `aibox_id`
+- `cam_id`
+- `start_time`
+- `end_time`
+- `paginate`、`page`、`page_size`
+
+Windows PowerShell：
+
+```powershell
+curl.exe -H "Authorization: Bearer MF_API_TEST_2026_001" "http://43.140.218.217:8000/api/speed?aibox_id=MF001&cam_id=CAM001&start_time=2026-05-01T00:00:00%2B08:00&end_time=2026-05-07T23:59:59%2B08:00"
+```
+
+Linux / macOS：
+
+```bash
+curl -H "Authorization: Bearer MF_API_TEST_2026_001" \
+"http://43.140.218.217:8000/api/speed?aibox_id=MF001&cam_id=CAM001&start_time=2026-05-01T00:00:00%2B08:00&end_time=2026-05-07T23:59:59%2B08:00"
+```
+
+返回字段说明：
+
+- `aibox_id`：设备盒子编号
+- `cam_id`：摄像头编号
+- `disaster_type`：灾害类型
+- `timestamp`：分析时间，北京时间
+- `speed`：流速结果对象，当前示例中包含：
+  `avg_speed`、`max_speed`、`unit`、`sample_count`、`series`
+
+### 4.4 设备在线状态
+
+- 接口：`GET /api/device_status`
+- 作用：获取设备在线状态
+
+可选参数：
+
+- `aibox_id`
+- `cam_id`
+- `paginate`、`page`、`page_size`
+
+Windows PowerShell：
+
+```powershell
+curl.exe -H "Authorization: Bearer MF_API_TEST_2026_001" "http://43.140.218.217:8000/api/device_status?aibox_id=MF001"
+```
+
+Linux / macOS：
+
+```bash
+curl -H "Authorization: Bearer MF_API_TEST_2026_001" \
+"http://43.140.218.217:8000/api/device_status?aibox_id=MF001"
+```
+
+返回字段说明：
+
+- `aibox_id`：设备盒子编号
+- `cam_id`：摄像头编号
+- `online_status`：在线状态，取值为 `on` 或 `off`
+- `last_update`：最近更新时间，北京时间
+
+### 4.5 设备位置信息
+
+- 接口：`GET /api/device_location`
+- 作用：获取设备位置信息
+
+可选参数：
+
+- `aibox_id`
+- `cam_id`
+- `paginate`、`page`、`page_size`
+
+Windows PowerShell：
+
+```powershell
+curl.exe -H "Authorization: Bearer MF_API_TEST_2026_001" "http://43.140.218.217:8000/api/device_location?aibox_id=MF001"
+```
+
+Linux / macOS：
+
+```bash
+curl -H "Authorization: Bearer MF_API_TEST_2026_001" \
+"http://43.140.218.217:8000/api/device_location?aibox_id=MF001"
+```
+
+返回字段说明：
+
+- `aibox_id`：设备盒子编号
+- `cam_id`：摄像头编号
+- `location`：位置名称
+- `latitude`：纬度
+- `longitude`：经度
+
+重要说明：
+
+- 本接口当前有效筛选参数为 `aibox_id` 和 `cam_id`
+- `MF001` 这类编号应作为 `aibox_id` 传入
+- 不建议使用 `device_id=MF001` 进行调用
+
+## 5. 分页返回格式
+
+当传入 `paginate=true` 时，返回格式如下：
+
+```json
+{
+  "items": [],
+  "total": 123,
+  "page": 1,
+  "page_size": 50
+}
+```
+
+## 6. 错误返回格式
+
+接口错误时统一返回 JSON，格式如下：
+
+```json
+{
+  "code": "UNAUTHORIZED",
+  "message": "Missing Authorization header",
+  "detail": "Missing Authorization header",
+  "request_id": "xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+}
+```
+
+常见状态码：
+
+- `200`：成功
+- `400`：请求参数错误
+- `401`：未授权或 API_KEY 无效
+- `403`：无权限
+- `404`：资源不存在
+- `422`：参数校验失败
+- `429`：请求过于频繁
+- `500`：服务器内部错误
+
+## 7. 客户接入建议
+
+- 建议按设备编号 `aibox_id` 和摄像头编号 `cam_id` 做条件查询，避免一次拉取全量数据
+- 历史数据类接口建议按时间窗口分批拉取
+- Windows PowerShell 请优先使用 `curl.exe`，不要直接使用 `curl`
+- 若时间参数包含 `+08:00`，请务必写成 `%2B08:00`
+- 当前环境为联调测试环境，地址为 `HTTP + 8000` 端口
+- 若后续切换正式环境，再统一替换为正式 `HTTPS` 地址

@@ -1,0 +1,8 @@
+timestamp=20260402_202635
+env=dev
+env_file=.env.dev
+db_host=127.0.0.1
+db_port=3307
+db_name=mf_monitor
+db_user=Evil_Pidan_King
+backup_file=backups\mysql\mf_monitor_dev_20260402_202635.sql
