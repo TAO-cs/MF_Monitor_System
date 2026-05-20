@@ -18,7 +18,9 @@ $requiredBackend = @(
   "DB_PASSWORD",
   "MQTT_BROKER_HOST",
   "MQTT_BROKER_PORT",
-  "API_KEY"
+  "API_KEY",
+  "PLATFORM_ADMIN_USERNAME",
+  "PLATFORM_ADMIN_PASSWORD"
 )
 
 $requiredCompose = @(

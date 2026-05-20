@@ -54,8 +54,10 @@ MQTT HAProxy 状态页：
 http://127.0.0.1:8404/stats
 
 登录账号：
-用户名：ninh
-密码：ninh1122
+从部署环境变量 PLATFORM_ADMIN_USERNAME 读取
+
+登录密码：
+从部署环境变量 PLATFORM_ADMIN_PASSWORD 读取，不在仓库明文保存
 
 ==================================================
 三、Windows 本机 IP 查询

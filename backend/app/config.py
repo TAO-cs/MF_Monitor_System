@@ -61,6 +61,8 @@ _required_or_raise(
         "MQTT_BROKER_HOST",
         "MQTT_BROKER_PORT",
         "API_KEY",
+        "PLATFORM_ADMIN_USERNAME",
+        "PLATFORM_ADMIN_PASSWORD",
     ],
     ENV_PATH,
 )
@@ -81,11 +83,11 @@ class Settings(BaseModel):
     mqtt_username: str = os.getenv("MQTT_USERNAME", "")
     mqtt_password: str = os.getenv("MQTT_PASSWORD", "")
 
-    api_key: str = os.getenv("API_KEY", "dev-api-key-change-me")
+    api_key: str = os.getenv("API_KEY", "")
     api_keys: list[str] = _parse_csv_env(os.getenv("API_KEYS", ""))
     api_keys_disabled: set[str] = set(_parse_csv_env(os.getenv("API_KEYS_DISABLED", "")) )
-    platform_admin_username: str = os.getenv("PLATFORM_ADMIN_USERNAME", "ninh")
-    platform_admin_password: str = os.getenv("PLATFORM_ADMIN_PASSWORD", "ninh1122")
+    platform_admin_username: str = os.getenv("PLATFORM_ADMIN_USERNAME", "")
+    platform_admin_password: str = os.getenv("PLATFORM_ADMIN_PASSWORD", "")
     platform_admin_display_name: str = os.getenv("PLATFORM_ADMIN_DISPLAY_NAME", "平台管理员")
     platform_session_hours: int = int(os.getenv("PLATFORM_SESSION_HOURS", "12"))
 
@@ -121,8 +123,6 @@ class Settings(BaseModel):
                 deduped.append(key)
 
         active = [k for k in deduped if k not in self.api_keys_disabled]
-        if not active:
-            return ["dev-api-key-change-me"]
         return active
 
     @property
