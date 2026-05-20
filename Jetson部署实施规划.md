@@ -64,7 +64,7 @@ sudo systemctl start rtsp_probe@SITE01.service
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_simulator_fleet.ps1 `
   -InventoryFile .\deploy\inventory\devices.csv `
-  -Host 127.0.0.1 `
+  -MqttHost 127.0.0.1 `
   -Port 1883 `
   -Interval 5
 ```

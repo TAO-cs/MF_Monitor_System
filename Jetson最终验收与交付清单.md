@@ -58,14 +58,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\package_jetson_bun
 ### 5. 模拟联调
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_simulator_fleet.ps1 -InventoryFile .\deploy\inventory\devices.csv -Host 127.0.0.1 -Port 1883 -Interval 5
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_simulator_fleet.ps1 -InventoryFile .\deploy\inventory\devices.csv -MqttHost 127.0.0.1 -Port 1883 -Interval 5
 ```
 
 ### 6. 平台与可视化验收
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_p2_3_mysql_ha.ps1 -EnvFile .env.dev.ha.mqtt.dbha
-powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_p2_5_visualization.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_p2_5_visualization.ps1 -EnvFile .env.dev.ha.mqtt.dbha -ApiBase http://127.0.0.1:18001 -GatewayBase http://127.0.0.1:18001
 ```
 
 ---

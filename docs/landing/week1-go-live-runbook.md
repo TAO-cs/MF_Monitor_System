@@ -49,6 +49,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\start_p2_3_mysql_ha.ps1 -Env 
 
 - `http://127.0.0.1:18001/health`
 - `https://127.0.0.1/console`
+- If local Windows HTTPS access fails because of certificate or Schannel issues, use `http://127.0.0.1:18001` as the local acceptance gateway base and keep HTTPS for formal deployment.
 - `docker ps` 中 `backend_api_1`、`backend_api_2`、`backend_worker`、`mysql`、`mysql_replica`、`mqtt_primary`、`mqtt_secondary`、`nginx` 全部正常
 
 平台 HA 验证：
@@ -136,7 +137,7 @@ sudo systemctl status rtsp_probe@SITE01.service --no-pager
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_simulator_fleet.ps1 `
   -InventoryFile .\deploy\inventory\devices.csv `
-  -Host 127.0.0.1 `
+  -MqttHost 127.0.0.1 `
   -Port 1883 `
   -Interval 5
 ```
@@ -151,7 +152,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_simulator_flee
 可视化验证：
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_p2_5_visualization.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_p2_5_visualization.ps1 -EnvFile .env.dev.ha.mqtt.dbha -ApiBase http://127.0.0.1:18001 -GatewayBase http://127.0.0.1:18001
 ```
 
 ---
@@ -165,7 +166,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_week1_jetson_b
 powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_week1_site_bundle_packaging.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_week1_fleet_rehearsal.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_p2_3_mysql_ha.ps1 -EnvFile .env.dev.ha.mqtt.dbha
-powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_p2_5_visualization.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_p2_5_visualization.ps1 -EnvFile .env.dev.ha.mqtt.dbha -ApiBase http://127.0.0.1:18001 -GatewayBase http://127.0.0.1:18001
 ```
 
 通过标准：

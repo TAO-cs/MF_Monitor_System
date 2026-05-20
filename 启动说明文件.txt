@@ -14,6 +14,7 @@ powershell -ExecutionPolicy Bypass -File .\scripts\start_p2_3_mysql_ha.ps1 -Env 
 - docker ps
 - http://127.0.0.1:18001/health
 - https://127.0.0.1/console
+- 如果本机 Windows 上 `https://127.0.0.1` 因证书或 Schannel 问题无法访问，联调验收统一改走 `http://127.0.0.1:18001`，正式部署仍保持 HTTPS。
 
 ==================================================
 2. 环境与安全检查
@@ -79,7 +80,7 @@ sudo systemctl status rtsp_probe@SITE01.service --no-pager
 powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_week1_fleet_rehearsal.ps1
 
 启动模拟集群：
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_simulator_fleet.ps1 -InventoryFile .\deploy\inventory\devices.csv -Host 127.0.0.1 -Port 1883 -Interval 5
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_simulator_fleet.ps1 -InventoryFile .\deploy\inventory\devices.csv -MqttHost 127.0.0.1 -Port 1883 -Interval 5
 
 验收观察：
 - /api/device_overview 为 10 台
@@ -97,7 +98,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_week1_jetson_b
 powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_week1_site_bundle_packaging.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_week1_fleet_rehearsal.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_p2_3_mysql_ha.ps1 -EnvFile .env.dev.ha.mqtt.dbha
-powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_p2_5_visualization.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_p2_5_visualization.ps1 -EnvFile .env.dev.ha.mqtt.dbha -ApiBase http://127.0.0.1:18001 -GatewayBase http://127.0.0.1:18001
 
 ==================================================
 8. 停止平台

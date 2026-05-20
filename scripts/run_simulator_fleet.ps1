@@ -1,6 +1,6 @@
 Param(
   [string]$InventoryFile = ".\deploy\inventory\devices.csv",
-  [string]$Host = "127.0.0.1",
+  [string]$MqttHost = "127.0.0.1",
   [int]$Port = 1883,
   [int]$Interval = 5,
   [string]$PythonExe = ".\venv_MFSystem\Scripts\python.exe"
@@ -26,17 +26,19 @@ if (-not $rows -or $rows.Count -eq 0) {
 }
 
 $repoRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
-$pythonPath = Resolve-Path $PythonExe
+$pythonPath = (Resolve-Path $PythonExe).Path
 
 foreach ($row in $rows) {
-  Start-Process powershell `
+  Start-Process -FilePath $pythonPath `
     -WindowStyle Hidden `
     -WorkingDirectory $repoRoot `
     -ArgumentList @(
-      "-NoProfile",
-      "-ExecutionPolicy", "Bypass",
-      "-Command",
-      "& `"$pythonPath`" .\backend\simulator.py --host $Host --port $Port --device $($row.aibox_id) --cam $($row.cam_id) --interval $Interval"
+      ".\backend\simulator.py",
+      "--host", $MqttHost,
+      "--port", $Port,
+      "--device", $row.aibox_id,
+      "--cam", $row.cam_id,
+      "--interval", $Interval
     ) | Out-Null
 
   Write-Host ("[started] {0} {1}/{2}" -f $row.site_code, $row.aibox_id, $row.cam_id)
