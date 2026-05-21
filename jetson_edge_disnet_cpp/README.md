@@ -20,6 +20,7 @@ The current implementation is service-ready and keeps the following engineering 
 - runtime log files
 - `systemd` service deployment
 - Jetson-local TensorRT engine support
+- self-contained per-site deployment bundle generation
 
 ## Directory Layout
 
@@ -153,6 +154,8 @@ For week-1 batch landing, the repo now supports site bundle rendering from the s
 - inventory source: `../deploy/inventory/devices.csv`
 - config template: `configs/templates/device.ini.template`
 - rendered output: `../artifacts/jetson-sites/<SITE_CODE>/config/device.ini`
+- site manifest: `../artifacts/jetson-sites/<SITE_CODE>/site-manifest.json`
+- bundled Jetson payload: `../artifacts/jetson-sites/<SITE_CODE>/jetson_edge_disnet_cpp/`
 - packaged output: `../artifacts/jetson-sites/<SITE_CODE>.zip`
 
 Render all site configs from Windows:
@@ -167,7 +170,9 @@ Package all site bundles:
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\package_jetson_bundles.ps1
 ```
 
-Install one site bundle on Jetson after placing the rendered `config/device.ini` beside the repo checkout:
+Each rendered site bundle is self-contained: it already includes the Jetson source tree, install script, service template, rendered config, and site manifest.
+
+Install one site bundle on Jetson directly from the extracted site package root:
 
 ```bash
 sudo bash jetson_edge_disnet_cpp/deploy/install_site.sh SITE01 /path/to/site-bundle-root
@@ -179,6 +184,8 @@ Enable and start the per-site service:
 sudo systemctl enable rtsp_probe@SITE01.service
 sudo systemctl start rtsp_probe@SITE01.service
 ```
+
+Re-running `install_site.sh` for the same `SITE_CODE` is supported. The installer now refreshes the existing site payload in place instead of nesting `jetson_edge_disnet_cpp` directories.
 
 ## Document Entry
 

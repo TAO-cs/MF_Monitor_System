@@ -25,6 +25,14 @@ if ($installText -notmatch '/opt/mf-monitor/\$\{SITE_CODE\}') {
   throw "install_site.sh does not install into per-site target root"
 }
 
+if ($installText -match 'cp -r "\$\{APP_SOURCE_ROOT\}" "\$\{TARGET_ROOT\}/jetson_edge_disnet_cpp"') {
+  throw "install_site.sh still uses a nesting-prone recursive copy for the app source"
+}
+
+if ($installText -notmatch 'cp -a "\$\{APP_SOURCE_ROOT\}/\." "\$\{TARGET_ROOT\}/jetson_edge_disnet_cpp/"') {
+  throw "install_site.sh does not copy app source contents in an idempotent way"
+}
+
 powershell -NoProfile -ExecutionPolicy Bypass -File $renderer `
   -InventoryFile ".\deploy\inventory\devices.csv" `
   -TemplateFile ".\jetson_edge_disnet_cpp\configs\templates\device.ini.template" `
@@ -45,9 +53,50 @@ if ($renderedText -notmatch 'evidence_upload_api_key=test-evidence-key') {
   throw "rendered config missing expected evidence upload api key"
 }
 
+$manifestPath = Join-Path $OutputRoot "SITE01\site-manifest.json"
+if (-not (Test-Path $manifestPath)) {
+  throw "site manifest missing: $manifestPath"
+}
+
+$manifestText = Get-Content $manifestPath -Raw -Encoding UTF8
+if ($manifestText -notmatch '"site_code"\s*:\s*"SITE01"') {
+  throw "site manifest missing expected site_code"
+}
+
+if ($manifestText -notmatch '"aibox_id"\s*:\s*"MF001"') {
+  throw "site manifest missing expected aibox_id"
+}
+
+foreach ($path in @(
+  (Join-Path $OutputRoot "SITE01\jetson_edge_disnet_cpp\CMakeLists.txt"),
+  (Join-Path $OutputRoot "SITE01\jetson_edge_disnet_cpp\scripts\run_rtsp_probe.sh"),
+  (Join-Path $OutputRoot "SITE01\jetson_edge_disnet_cpp\src\main.cpp")
+)) {
+  if (-not (Test-Path $path)) {
+    throw "site bundle missing self-contained Jetson payload file: $path"
+  }
+}
+
 powershell -NoProfile -ExecutionPolicy Bypass -File $packer -OutputRoot $OutputRoot
 
 $zipFile = Join-Path $OutputRoot "SITE01.zip"
 if (-not (Test-Path $zipFile)) {
   throw "site zip package missing: $zipFile"
+}
+
+$extractRoot = Join-Path $OutputRoot "_site01_zip_extract"
+if (Test-Path $extractRoot) {
+  Remove-Item $extractRoot -Recurse -Force
+}
+
+Expand-Archive -Path $zipFile -DestinationPath $extractRoot -Force
+
+foreach ($path in @(
+  (Join-Path $extractRoot "SITE01\config\device.ini"),
+  (Join-Path $extractRoot "SITE01\site-manifest.json"),
+  (Join-Path $extractRoot "SITE01\jetson_edge_disnet_cpp\scripts\run_rtsp_probe.sh")
+)) {
+  if (-not (Test-Path $path)) {
+    throw "packaged zip missing expected file after extraction: $path"
+  }
 }

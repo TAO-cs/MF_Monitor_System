@@ -55,6 +55,13 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\render_jetson_site
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\package_jetson_bundles.ps1 -OutputRoot .\artifacts\jetson-sites
 ```
 
+检查 `SITE01` 目录至少包含：
+- `config/device.ini`
+- `site-manifest.json`
+- `deploy/install_site.sh`
+- `deploy/rtsp_probe@.service`
+- `jetson_edge_disnet_cpp/`
+
 ### 5. 模拟联调
 
 ```powershell

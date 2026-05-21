@@ -53,11 +53,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\package_jetson_bun
 ### 第 5 步：安装一个站点
 
 ```bash
-export APP_SOURCE_ROOT=/home/nvidia/mudflow_project/jetson_edge_disnet_cpp
 sudo bash /path/to/SITE01/deploy/install_site.sh SITE01 /path/to/SITE01
 sudo systemctl enable rtsp_probe@SITE01.service
 sudo systemctl start rtsp_probe@SITE01.service
 ```
+
+- `SITE01` 解压目录现在默认已经包含 `jetson_edge_disnet_cpp/`、`config/device.ini`、`deploy/install_site.sh`、`deploy/rtsp_probe@.service`，可直接安装。
+- 只有在你明确想改用 Jetson 本机已有源码目录时，才需要额外设置 `APP_SOURCE_ROOT`。
+- `install_site.sh` 支持对同一站点重复执行，用于覆盖更新站点包内容。
 
 ### 第 6 步：启动 10 设备模拟演练
 
@@ -89,8 +92,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\run_simulator_flee
 每个站点包至少包含：
 
 - `config/device.ini`
+- `site-manifest.json`
 - `deploy/install_site.sh`
 - `deploy/rtsp_probe@.service`
+- `jetson_edge_disnet_cpp/`
 
 站点差异全部来自 `devices.csv`：
 

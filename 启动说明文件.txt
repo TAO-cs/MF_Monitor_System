@@ -66,11 +66,15 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\package_jetson_bun
 ==================================================
 
 Jetson 上执行：
-export APP_SOURCE_ROOT=/home/nvidia/mudflow_project/jetson_edge_disnet_cpp
 sudo bash /path/to/SITE01/deploy/install_site.sh SITE01 /path/to/SITE01
 sudo systemctl enable rtsp_probe@SITE01.service
 sudo systemctl start rtsp_probe@SITE01.service
 sudo systemctl status rtsp_probe@SITE01.service --no-pager
+
+说明：
+- `SITE01` 解压目录已经是可直接落地的自包含站点包，默认不需要额外准备 Jetson 本地 repo。
+- 如果需要强制使用 Jetson 上已有源码目录，再手动设置 `APP_SOURCE_ROOT=/home/nvidia/mudflow_project/jetson_edge_disnet_cpp`。
+- 对同一个站点重复执行 `install_site.sh` 可以覆盖更新站点内容，不会再把 `jetson_edge_disnet_cpp` 套娃复制。
 
 ==================================================
 6. 无摄像头 10 设备联调
