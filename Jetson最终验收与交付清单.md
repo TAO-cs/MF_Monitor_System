@@ -51,14 +51,16 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\bootstrap_devices_
 ### 4. Jetson 出包
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\render_jetson_site_bundle.ps1 -InventoryFile .\deploy\inventory\devices.csv -TemplateFile .\jetson_edge_disnet_cpp\configs\templates\device.ini.template -OutputRoot .\artifacts\jetson-sites -EvidenceUploadApiKey <EVIDENCE_UPLOAD_API_KEY>
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\render_jetson_site_bundle.ps1 -InventoryFile .\deploy\inventory\devices.csv -TemplateFile .\jetson_edge_disnet_cpp\configs\templates\device.ini.template -OutputRoot .\artifacts\jetson-sites -ReleaseVersion 2026.05.21-rc1 -EvidenceUploadApiKey <EVIDENCE_UPLOAD_API_KEY>
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\package_jetson_bundles.ps1 -OutputRoot .\artifacts\jetson-sites
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\render_jetson_rollout_plan.ps1 -BundleRoot .\artifacts\jetson-sites -ReleaseVersion 2026.05.21-rc1
 ```
 
 检查 `SITE01` 目录至少包含：
 - `config/device.ini`
 - `site-manifest.json`
 - `deploy/install_site.sh`
+- `deploy/rollback_site_update.sh`
 - `deploy/rtsp_probe@.service`
 - `jetson_edge_disnet_cpp/`
 

@@ -46,18 +46,23 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\render_jetson_site
   -InventoryFile .\deploy\inventory\devices.csv `
   -TemplateFile .\jetson_edge_disnet_cpp\configs\templates\device.ini.template `
   -OutputRoot .\artifacts\jetson-sites `
+  -ReleaseVersion 2026.05.21-rc1 `
   -EvidenceUploadApiKey <EVIDENCE_UPLOAD_API_KEY>
 
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\package_jetson_bundles.ps1 -OutputRoot .\artifacts\jetson-sites
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\render_jetson_rollout_plan.ps1 -BundleRoot .\artifacts\jetson-sites -ReleaseVersion 2026.05.21-rc1
 ```
 
 ### 5. 单站安装
 
 ```bash
-export APP_SOURCE_ROOT=/home/nvidia/mudflow_project/jetson_edge_disnet_cpp
-sudo bash /path/to/SITE01/deploy/install_site.sh SITE01 /path/to/SITE01
+sudo bash /path/to/SITE01/deploy/install_site.sh SITE01 /path/to/SITE01 2026.05.21-rc1
 sudo systemctl enable rtsp_probe@SITE01.service
 sudo systemctl start rtsp_probe@SITE01.service
+```
+
+```bash
+sudo bash /path/to/SITE01/deploy/rollback_site_update.sh SITE01
 ```
 
 ### 6. 模拟联调

@@ -6,8 +6,8 @@ Wants=network-online.target
 [Service]
 Type=simple
 User=nvidia
-WorkingDirectory=/opt/mf-monitor/%i/jetson_edge_disnet_cpp
-ExecStart=/opt/mf-monitor/%i/jetson_edge_disnet_cpp/scripts/run_rtsp_probe.sh /opt/mf-monitor/%i/config/device.ini
+WorkingDirectory=/opt/mf-monitor/%i/current/jetson_edge_disnet_cpp
+ExecStart=/opt/mf-monitor/%i/current/jetson_edge_disnet_cpp/scripts/run_rtsp_probe.sh /opt/mf-monitor/%i/current/config/device.ini
 Restart=always
 RestartSec=5
 StandardOutput=journal

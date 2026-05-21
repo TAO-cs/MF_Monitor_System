@@ -3,6 +3,7 @@ Param(
   [string]$TemplateFile = ".\jetson_edge_disnet_cpp\configs\templates\device.ini.template",
   [string]$OutputRoot = ".\artifacts\jetson-sites",
   [string]$EnginePath = "/home/nvidia/mudflow_project/model_onnx/EdgeDisNet_fp16_jetson.engine",
+  [string]$ReleaseVersion = "",
   [Parameter(Mandatory = $true)]
   [string]$EvidenceUploadApiKey
 )
@@ -21,6 +22,11 @@ $rows = Import-Csv $InventoryFile
 $template = Get-Content $TemplateFile -Raw -Encoding UTF8
 $deploySource = Join-Path (Resolve-Path ".\jetson_edge_disnet_cpp\deploy") ""
 $jetsonSourceRoot = (Resolve-Path ".\jetson_edge_disnet_cpp").Path
+
+if (-not $ReleaseVersion) {
+  $ReleaseVersion = Get-Date -Format "yyyy.MM.dd-HHmmss"
+}
+
 $payloadItems = @(
   "CMakeLists.txt",
   "README.md",
@@ -86,11 +92,13 @@ foreach ($row in $rows) {
     mqtt_host = $row.mqtt_host
     mqtt_port = $row.mqtt_port
     evidence_upload_url = $row.evidence_upload_url
+    release_version = $ReleaseVersion
     generated_at = (Get-Date).ToString("o")
   }
 
   $manifest | ConvertTo-Json | Set-Content -Path (Join-Path $siteDir "site-manifest.json") -Encoding UTF8
 
   Copy-Item -Path (Join-Path $deploySource "install_site.sh") -Destination (Join-Path $deployDir "install_site.sh") -Force
+  Copy-Item -Path (Join-Path $deploySource "rollback_site_update.sh") -Destination (Join-Path $deployDir "rollback_site_update.sh") -Force
   Copy-Item -Path (Join-Path $deploySource "rtsp_probe@.service") -Destination (Join-Path $deployDir "rtsp_probe@.service") -Force
 }

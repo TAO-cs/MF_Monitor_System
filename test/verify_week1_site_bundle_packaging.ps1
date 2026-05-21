@@ -16,8 +16,8 @@ foreach ($path in @($serviceTemplate, $installer, $renderer, $packer)) {
 }
 
 $serviceText = Get-Content $serviceTemplate -Raw -Encoding UTF8
-if ($serviceText -notmatch '/opt/mf-monitor/%i/jetson_edge_disnet_cpp') {
-  throw "service template does not point to per-site working directory"
+if ($serviceText -notmatch '/opt/mf-monitor/%i/current/jetson_edge_disnet_cpp') {
+  throw "service template does not point to current release working directory"
 }
 
 $installText = Get-Content $installer -Raw -Encoding UTF8
@@ -29,7 +29,7 @@ if ($installText -match 'cp -r "\$\{APP_SOURCE_ROOT\}" "\$\{TARGET_ROOT\}/jetson
   throw "install_site.sh still uses a nesting-prone recursive copy for the app source"
 }
 
-if ($installText -notmatch 'cp -a "\$\{APP_SOURCE_ROOT\}/\." "\$\{TARGET_ROOT\}/jetson_edge_disnet_cpp/"') {
+if ($installText -notmatch 'cp -a "\$\{APP_SOURCE_ROOT\}/\." "\$\{TARGET_RELEASE_ROOT\}/jetson_edge_disnet_cpp/"') {
   throw "install_site.sh does not copy app source contents in an idempotent way"
 }
 

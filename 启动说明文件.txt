@@ -51,10 +51,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_week1_jetson_b
 powershell -NoProfile -ExecutionPolicy Bypass -File .\test\verify_week1_site_bundle_packaging.ps1
 
 渲染站点配置：
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\render_jetson_site_bundle.ps1 -InventoryFile .\deploy\inventory\devices.csv -TemplateFile .\jetson_edge_disnet_cpp\configs\templates\device.ini.template -OutputRoot .\artifacts\jetson-sites -EvidenceUploadApiKey <EVIDENCE_UPLOAD_API_KEY>
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\render_jetson_site_bundle.ps1 -InventoryFile .\deploy\inventory\devices.csv -TemplateFile .\jetson_edge_disnet_cpp\configs\templates\device.ini.template -OutputRoot .\artifacts\jetson-sites -ReleaseVersion 2026.05.21-rc1 -EvidenceUploadApiKey <EVIDENCE_UPLOAD_API_KEY>
 
 打包：
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\package_jetson_bundles.ps1 -OutputRoot .\artifacts\jetson-sites
+
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\render_jetson_rollout_plan.ps1 -BundleRoot .\artifacts\jetson-sites -ReleaseVersion 2026.05.21-rc1
 
 输出：
 - artifacts\jetson-sites\SITE01.zip
@@ -66,7 +68,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\package_jetson_bun
 ==================================================
 
 Jetson 上执行：
-sudo bash /path/to/SITE01/deploy/install_site.sh SITE01 /path/to/SITE01
+sudo bash /path/to/SITE01/deploy/install_site.sh SITE01 /path/to/SITE01 2026.05.21-rc1
 sudo systemctl enable rtsp_probe@SITE01.service
 sudo systemctl start rtsp_probe@SITE01.service
 sudo systemctl status rtsp_probe@SITE01.service --no-pager
@@ -75,6 +77,7 @@ sudo systemctl status rtsp_probe@SITE01.service --no-pager
 - `SITE01` 解压目录已经是可直接落地的自包含站点包，默认不需要额外准备 Jetson 本地 repo。
 - 如果需要强制使用 Jetson 上已有源码目录，再手动设置 `APP_SOURCE_ROOT=/home/nvidia/mudflow_project/jetson_edge_disnet_cpp`。
 - 对同一个站点重复执行 `install_site.sh` 可以覆盖更新站点内容，不会再把 `jetson_edge_disnet_cpp` 套娃复制。
+- 如需回滚上一版，执行 `sudo bash /path/to/SITE01/deploy/rollback_site_update.sh SITE01`。
 
 ==================================================
 6. 无摄像头 10 设备联调

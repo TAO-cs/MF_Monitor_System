@@ -157,11 +157,12 @@ For week-1 batch landing, the repo now supports site bundle rendering from the s
 - site manifest: `../artifacts/jetson-sites/<SITE_CODE>/site-manifest.json`
 - bundled Jetson payload: `../artifacts/jetson-sites/<SITE_CODE>/jetson_edge_disnet_cpp/`
 - packaged output: `../artifacts/jetson-sites/<SITE_CODE>.zip`
+- rollout plan: `../artifacts/jetson-sites/rollout-plan.csv`
 
 Render all site configs from Windows:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\render_jetson_site_bundle.ps1 -EvidenceUploadApiKey <EVIDENCE_UPLOAD_API_KEY>
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\render_jetson_site_bundle.ps1 -ReleaseVersion 2026.05.21-rc1 -EvidenceUploadApiKey <EVIDENCE_UPLOAD_API_KEY>
 ```
 
 Package all site bundles:
@@ -170,12 +171,18 @@ Package all site bundles:
 powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\package_jetson_bundles.ps1
 ```
 
+Generate the batch rollout rehearsal plan:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\scripts\render_jetson_rollout_plan.ps1 -BundleRoot .\artifacts\jetson-sites -ReleaseVersion 2026.05.21-rc1
+```
+
 Each rendered site bundle is self-contained: it already includes the Jetson source tree, install script, service template, rendered config, and site manifest.
 
 Install one site bundle on Jetson directly from the extracted site package root:
 
 ```bash
-sudo bash jetson_edge_disnet_cpp/deploy/install_site.sh SITE01 /path/to/site-bundle-root
+sudo bash jetson_edge_disnet_cpp/deploy/install_site.sh SITE01 /path/to/site-bundle-root 2026.05.21-rc1
 ```
 
 Enable and start the per-site service:
@@ -185,7 +192,13 @@ sudo systemctl enable rtsp_probe@SITE01.service
 sudo systemctl start rtsp_probe@SITE01.service
 ```
 
-Re-running `install_site.sh` for the same `SITE_CODE` is supported. The installer now refreshes the existing site payload in place instead of nesting `jetson_edge_disnet_cpp` directories.
+Rollback one site to the previous release:
+
+```bash
+sudo bash /path/to/site-bundle-root/deploy/rollback_site_update.sh SITE01
+```
+
+Re-running `install_site.sh` for the same `SITE_CODE` is supported. The installer now writes versioned releases under `/opt/mf-monitor/<SITE_CODE>/releases`, switches the `current` symlink, and preserves the last release in `previous` for rollback.
 
 ## Document Entry
 
